@@ -1,0 +1,14 @@
+# Binarios de programas: se regeneran con coma-build.bat (no van al repo)
+*.exe
+# ...salvo el toolchain, para usarlo nada más clonar
+!nim/coma.exe
+!tools/ide/coma-ide.exe
+*.pdb
+*.obj
+# Artefactos regenerables del compilador
+*.ll
+*.log
+sesion-*.log
+# Cachés de toolchains
+nimcache/
+zig-cache/

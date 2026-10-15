@@ -1,0 +1,314 @@
+COMA.. — ESPECIFICACIÓN DEL LENGUAJE (documento vivo)
+=====================================================
+Filosofía: destruir C, ergonomía de prosa.
+Nombre: .Coma (punto y coma: lo que el lenguaje reemplaza).
+Leyenda: [OK] decidido · [?] propuesto, vetable.
+
+1. NOMBRES
+- Variables y funciones: inicial mayúscula, Unicode (eñes, tildes, Ñ, Á). Normalización NFC. Se demuestra: Daño_total, Suma_daño, Precio_poción. [OK]
+- Keywords: SIEMPRE minúsculas. Minúscula-inicial que no sea keyword = error con sugerencia. [OK]
+- `mas` y `más` valen lo mismo. [OK]
+
+2. TERMINADOR
+- `.` final en toda línea. Error `falta el punto final` con flecha. [OK]
+- `.` + letra reservado a miembro (Registro.Campo). [OK]
+
+3. NÚMEROS
+- Enteros: 25, 1000, 25000 (miles sin separador). [OK]
+- Decimales con coma, dígitos obligatorios a ambos lados: 3,14. [OK]
+- `3,` solo o `,5` solo = error (quisiste decir 3,0? / 0,5?). [OK]
+- Negativos: -3,14 (menos unario donde se espera valor). [OK]
+- División exacta siempre: 7 entre 2 igual 3,5. Entero más decimal igual decimal. [OK]
+
+4. COMENTARIOS
+- |...| simétricos, una línea, sin anidar. | sin cerrar = hasta fin de línea. Dentro de "..." es literal. [OK]
+
+5. TEXTOS
+- Comillas dobles "...". Escape de comilla: "" doblada. [OK comillas; ? escape]
+- Sin tope 256: heap con free al salir de función (locales); retorno-texto en buffer propio por función (sin reentrancia: documentado). Truncado silencioso: muerto. [OK]
+
+6. VARIABLES E IGUAL
+- `=`, `igual`, `es_igual_a` (EN `equal`, `is_equal_to`) SON LA MISMA palabra. Vivir con todo. [OK]
+- Abriendo sentencia (Nombre igual ...) = asigna. En cualquier otro sitio = compara. [OK]
+- Un igual por nivel: `A igual B igual 5.` es error, se escribe en dos líneas. La asignación no devuelve valor. [OK]
+- Comparación suelta como sentencia (`X es_igual_a 5.`, `Elemento 1 de L es_igual_a 1.`, útil en comprobar): el sondeo de asignación rebobina si no hay `igual` (antes E001 falso). [OK]
+- Unión inteligente: guion-bajo = espacio (es igual a ≡ es_igual_a, por cada ≡ por_cada, termina aqui ≡ fin); partículas opcionales (es igual / igual a / es igual a ≡ igual; equal to, is equal (to) igual). Sin mezclar (_ y espacio). si_no NO existe (si no = en_caso+no); or else separado tampoco se junta. [OK]
+- Reasignación sin igual: `Turnos mas 1.` = Turnos igual Turnos mas 1. (vale con mas/menos/por/entre; cero keywords nuevas). [?]
+- Primera vez en su ámbito = declara. [OK]
+- ÁMBITO DECIDIDO: nivel-función. Todo lo de una función se ve en toda ella;
+  los bloques comparten el ámbito (no declaran nada). `igual` actualiza la
+  visible más cercana y SOLO declara si el nombre no existe en ningún ámbito
+  visible. Así el ejemplo de la tienda funciona sin cierre tardío. [OK]
+- Ningún nombre esconde a otro JAMÁS (sombra imposible). Parámetro con nombre
+  ya existente fuera = error en la definición (usa otro nombre). [OK]
+- pedir X. y la X de por_cada valen como asignación (actualizan o declaran;
+  la de por_cada queda con el último valor). [OK]
+- Globales (nivel archivo): visibles en todas partes y tocables desde funciones.
+  En Coma.. NO existen public/private: todo lo visible es público (filosofía
+  "todos son vagos"). Sin muros, los avisos de typos cargan la seguridad. [OK]
+- Recursión propia OK; firmas recogidas antes de usar (orden libre en el
+  archivo, recursión mutua OK). [OK]
+- IDs de bloque: NO existen en v1 para el programador. El compilador numera
+  bloques por dentro para errores (`solo existe en el en_caso_de_que de la
+  línea 12`). Calificar con ID queda reservado a módulos (Vida de Fisica). [OK]
+
+7. OPERADORES
+- igual/= | mas-más/+ | menos/- | por/* | entre// [OK igual mas; ? menos por entre]
+- EN: equal plus minus times divided_by. [OK]
+- Precedencia: 1) menos unario 2) por entre 3) mas menos 4) comparaciones 5) y. [OK]
+- y/o con cortocircuito: la derecha no se evalúa si la izquierda ya decide (guarda E101: `I es menor que Longitud y Elemento I...` no aborta). [OK]
+- Comparaciones-palabra: es_igual_a es_mayor_que es_menor_que (EN is_equal_to is_greater_than is_less_than). Familia pendiente: es_distinto_de es_mayor_o_igual... [OK]
+- Comparaciones humanas (100 por ciento humano): `menor a` ≡ `menor que` ≡ `es_menor_que`; `mayor a` ≡ `mayor que` ≡ `es_mayor_que`; `distinto a`/`diferente a` ≡ `es_distinto_de`; `menor o igual a`, `mayor o igual a`, `equivalente a` ≡ `es_equivalente_a`. El `es` inicial es opcional (`Valor menor a 20.` vale). `del` ≡ `de`, `al` ≡ `a`. [OK]
+- Artículos ignorables: `el la los las un una unos unas que` se saltan en expresiones (`la Vida`, `Vida de el Heroe`, `Vida del Heroe`); `de` inicial se salta al abrir sentencia (`de en caso de que la Vida de el Heroe es menor a 1.` vale). EN: `the an` igual (`the Life of the Hero`, `append 5 to a Pack`); `are` ≡ `igual` (`the Points are greater than 60`), `son` ≡ `igual` en ES. [OK]
+- Booleanos: verdad falso y o no (EN true false and or not). [? o/no]
+
+8. MOSTRAR / PEDIR
+- mostrar print di | pedir input. mostrar admite varios con y. [OK mostrar pedir; ? resto]
+- pedir respeta tipo previo: `Edad igual 0. pedir Edad.` lee entero con reintento E103 (`E103 espero un numero.`); decimal vale coma (`1,5`); vacío/EOF = 0 y sigue. Nueva = texto como siempre. [OK]
+
+9. CONTROL
+- en_caso_de_que/if ... sino/else ... fin/end. [OK en_caso_de_que; ? sino fin]
+- `sino` con condición = sino_si plano (cero keywords nuevas): `sino X es_igual_a 1.` Una sola cadena, un solo fin. [?]
+- mientras/while ... fin. `fin` siempre obligatorio, aunque sea una sentencia. [OK]
+- para/stop = frenar el bucle. sigue/continue = siguiente vuelta. [OK]
+- Con etiqueta (v1): `como Nombre` en la apertura (EN as) + `para Nombre.` /
+  `sigue Nombre.` (frena/continúa el bloque nombrado entre anidados). [OK]
+- `fin Nombre.` cierra de golpe desde dentro hasta el bloque nombrado incluido
+  (adiós pilas de fin; si Nombre no está abierto = error). [?]
+- Cierre tardío `Nombre fin.` (bloque que sigue vivo más allá de su fin normal):
+  APARCADO v2. v1 = fin normal. Exigirá formateador obligatorio. [OK]
+- por_cada/for_each X en/in Lista ... fin. Modificar la lista dentro = error. [OK]
+- `segun`/`match` + `caso`/`case` + `otro`/`other`: despacho plano de N opciones
+  sobre un valor (primera coincidencia gana, sin caídas entre casos, sin `otro`
+  = silencio documentado). `caso` admite varias con y (`caso "mirar" y "ver".`).
+  Un solo fin por segun, se anidan. [?]
+
+10. FUNCIONES
+- funcion/function Nombre A y B. ... devolver/return X. ... fin. [OK]
+- Parámetros separados con y. Llamada: Sumar 3 y 5. (vale en expresiones, mostrar, condiciones, segun). Suelta: Sumar 3 y 5. (se descarta el retorno; el `y` separa args como en el resto, y si sigue comparación se rebobina a expresión: `Golpe 2 y 3 es_igual_a 5.` vale en comprobar). Llamada sin args: Verde. (solo con firma conocida; si no, es variable). [OK]
+- Firmas recogidas antes de usar: orden libre en el archivo Y entre módulos, recursión mutua OK. Hoisting: se emiten primero, valen en cualquier sitio (pero no anidadas). Función desconocida o aridad mal = error honesto (E003/E202), no basura al enlazador. [OK]
+- LÍMITE HONESTO v0.3: params i32 (decimal/texto como arg = E202; negativos con 0 menos X), retorno int/double inferido (texto = E202), sin locales (las vars del cuerpo son globales), para/sigue no cruzan funciones (E002). Demostrado: Fact 5 = 120. [OK]
+- Fase 1 (tipos ricos, cero keywords): `funcion Saludar Nombre como texto.` (entero/decimal/texto/lista +EN; sin tipo = entero). Retorno = tipo del primer `devolver`. Args se convierten (entero↔decimal en silencio); a texto solo texto y aridad exacta o E202; listas por valor (copia), registros ni arg ni retorno (E202). Función desconocida = E003 (antes basura al enlazador). Llamadas sin args: `Verde.` con firma conocida. Demostrado: tipos.coma (42, 3.5, eco.). [OK]
+- Fase 1 (tipos ricos): `funcion Saludar Nombre como texto.` (entero/decimal/texto +EN; sin tipo = entero). Retorno = tipo del primer `devolver` (i32/double/i8*; texto en buffer `@g_ret_F` propio, sin reentrancia). Args se convierten (entero↔decimal en silencio, como C); a texto solo texto, si no E202; `devolver` que mezcla texto con no-texto = E202. Listas/registros ni como arg ni retorno (E202). Demostrado: tipos.coma (42, 3.5, eco.). [OK]
+- Locales v0.3: lo asignado en el cuerpo y no global es local (alloca `%F_nombre`, i32, cero-init). Dos funciones con el mismo `Aux` no se tocan; la recursión con acumulador vale. Global con mismo nombre se escribe igual (manda lo local, como C); `pedir` dentro crea global. Float/texto a local = E202. Sin closures (E003 honesto). Demostrado: Tri 5 = 15, Puntos 0→10 desde funcion. [OK]
+- Locales fase 1: la E202 de float/texto cae (alloca tipada + cero-init para los tres); listas/registros en cuerpo siguen en global (límite honesto v1). Demostrado: Tri 3 = 6 con global Aux en 999. [OK]
+- Compartidas v0.3: el global tocado desde funciones sube a global de módulo (`@.g_X`) — misma semántica, visible en main y funciones. Sin sombra entre niveles distintos: cada alcance ve lo suyo. [OK]
+
+11. LISTAS
+- Crear: `L igual lista 1 y 2 y 3.` (enteros) o `N igual lista "ana" y "beto".` (texto) o `L igual vacia.` (vacía = enteros; +Lista | list, empty). La clase la manda el primer elemento; mezclar texto con números = E202 honesto. [OK]
+- ÍNDICES DESDE 1. Rompe con C a propósito: el elemento 3 es el tercero. [OK]
+- Leer: Elemento 2 de L. / Primero de L. / Ultimo de L. / Longitud de L. (EN element/first/last/length/of/from). Fuera de rango o vacía = E101 en prosa con línea + exit(1). [OK]
+- Escribir: Elemento 2 de L igual 99. / Primero/Ultimo de L igual X. [OK]
+- Agregar 5 a L. (llena = E101). Quitar 5 de L. (por valor, callado si no está). Quitar Elemento 2 de L. / Quitar Primero/Ultimo de L. (por posición). [OK]
+- por_cada E en L. ... fin. (+por cada | for each): E es copia del elemento (i32 o texto según la lista; adopta el tipo solo); para/sigue valen. Modificar la lista dentro = se puede pero pisa tu propio riesgo (v2 lo prohíbe). [OK]
+- Texto en listas (cero keywords nuevas): leer (`Primero de Nombres.` devuelve texto), escribir (`Elemento 2 de Nombres igual "bruno".`), `Agregar "dora" a Nombres.` (copia profunda), `Quitar "ana" de Nombres.` (por valor con strcmp, callado si no está) y por posición igual que enteros. `Copia igual Nombres.` copia profunda. Valor que no cabe en la clase = E202 (`ese valor no cabe en lista de texto`). Cruzan funciones como las de enteros: `funcion Gritar N como lista de texto.` (copia de entrada) y `devolver R.` (copia de vuelta). Demo: coma/ejemplos/lista_texto.coma (con comprobar). [OK]
+- `vacia` adopta clase: `Vacia igual vacia.` + `Agregar "x" a Vacia.` la vuelve de texto (en funciones, crea la lista con su primer texto en vez de vacía). [OK]
+- Anidadas de enteros (matrices, cero keywords nuevas): `M igual lista F1 y F2.` (una fila por elemento, copia profunda en cada nivel); leer filas (`Fila igual Elemento 1 de M.`), celdas (`Elemento 1 de Elemento 2 de M.`), escribir filas, agregar/quitar filas (por valor compara elemento a elemento) y `por_cada F en M.` (F es copia de la fila). Mezclar filas con sueltos o anidar texto = E202. Cruzan funciones (`como lista de listas`). Demo: coma/ejemplos/matriz.coma (con comprobar). [OK]
+- Sin tope 64: CList heap (crece x2 desde 8, free al salir de función). `funcion SumaL L como lista.` (por valor: copia profunda de entrada, sin aliasing); `devolver L.` devuelve copia (el llamante la adopta). Como arg solo variable (literal = E202). Demostrado: sin_topes (200, 19900, copia intacta). [OK]
+- LÍMITE HONESTO v0.4: enteros i32, texto o filas de enteros (sin mezclar clases); las tres cruzan funciones por valor (copia profunda); anidar texto sigue en E202.
+- Nota de backend honesta: el runtime evita devolver structs por valor al otro lado de la frontera (borde real zig-cc/LLVM: se usa parámetro de salida, como el resto del runtime).
+- LISTA DE REGISTROS v0.4: `G igual lista de registros:` + renglones `registro Vida 30 y Ataque 5.` + `fin.` (también abre con `.`). O desde registros: `G igual lista J1 y J2.` (copia los campos). Filas de enteros en heap sin topes, esquema = unión de campos; son entidades globales como los registros. Cada renglón tiene id = su número (1, 2, 3...). Demo: coma/ejemplos/oleada.coma (núcleo verificado: Daño_total 13, Vida 87). [OK]
+- Leer: `Vida de elemento 2 de G.` / `Vida de primero|ultimo de G.` / `Vida de id 2 de G.` (`id` vale por `elemento`). Longitud de G. vale. Campo inexistente = E005 + sugerencia. El renglón suelto no se asigna ni muestra entero (E202 honesto). [OK]
+- Escribir: `Vida de elemento 2 de G igual 99.` (también primero/ultimo/id). Sin campo = E202 (te dice la forma con campo). [OK]
+- por_cada E en G. ... fin.: E es la POSICIÓN (1, 2, 3...); dentro vale `Ataque de E` (leer) y `Vida de E igual X.` (escribir). Núcleo oleada verificado: Daño_total 13, Vida 87. [OK]
+- LÍMITE HONESTO v0.4: renglón entero como valor y puntero a renglón siguen en E201; en registros no se agrega ni se quita (E202, se construyen de una vez); campos de texto en filas siguen en E202 (filas de enteros); `por_cada ... como Etiqueta` sobre registros vale como en listas.
+
+12. REGISTROS
+- Crear: `J igual registro Vida 100 y Energia 50.` (pares Campo Valor con y) o `J igual registro.` vacío o `registro J:` + líneas `Vida 100.` + `fin.` (+estadisticas | record). Minúsculas valen: `pepito:` + `vida 100.` (se capitalizan). [OK]
+- Leer: Vida de J. = J.Vida. = vida de pepito. Las tres valen (punto = azúcar, el `:` final no toca). [OK]
+- Escribir: Poner 80 en Vida de J. = Vida de J igual 80. = J.Vida igual 80. (EN put in/of/from). [OK]
+- Esquema CERRADO v1: campo inexistente = E005 + sugerencia (lectura, escritura y Poner); repetido = E005; entero (mostrar/pedir/igual) = E202. Añadir campos nuevos no existe: se crea otro registro. [OK]
+- Campos tipados (primera escritura manda: entero/decimal/texto); leer campo texto a variable adopta texto (antes truncaba un puntero en silencio). [OK]
+- LÍMITE HONESTO v1: campos = variables `J.Campo` (siempre escribibles, anchos por campo); declara antes de usar; el renglón suelto como valor sigue en E201; registros ni como arg ni retorno (E202); registros en funciones siguen compartidos (son entidades, como Agmine).
+
+13. TIPOS (inferencia en compilación)
+- Entero: ancho = máximo de todas sus asignaciones (25 -> i8). Ramas: máximo. Bucle sin cota demostrable: i64 + aviso. [OK idea]
+- Decimal: f32 si cabe (~7 cifras), si no f64. [OK]
+- Cambio de tipo DECIDIDO (era ABIERTO): lo numérico mezcla en silencio; texto<->número, escalar<->lista/registro = E202 honesto (`X era entero y le das texto`). [OK]
+
+14. ERRORES HUMANOS
+- Flechas, sugerencias por distancia de edición obligatorias ante nombre parecido, idioma según el archivo. [OK]
+- Formato: línea del código + flecha ^~~~ + código Exxx + mensaje + sugerencia. Color si hay terminal. [?]
+- Niveles: error (no compila), aviso (compila), nota. Modo `en estricto`: avisos = errores. [?]
+- Catálogo inicial: E001 falta punto · E002 fin sin bloque/bloque sin fin · E003 nombre parecido · E004 igual repetido · E005 campo inexistente · E006 | sin cerrar (aviso). [?] + E105 fichero/permiso (runtime) [OK]
+- Runtime en prosa: línea + valores implicados + mini-traza (función, línea, llamante). E101 índice fuera de rango [OK] · E102 división por cero [OK] · E103 pedir recibe texto para número (con reintento). [OK]
+
+15. BILINGÜE Y COLOQUIAL (diccionario cerrado v1)
+- Un idioma por archivo (el pegamento y/and/e/con/with vale en todos; la detección de idioma llega en v0.3). [OK]
+- Todo alias se convierte a su canónica al leer; el compilador solo ve canónicas. [OK]
+- Diccionario (canónica ES: alias ES | alias EN):
+  mostrar: enseñar, exponer, exhibir, presentar, desplegar, indicar, muestra, enseña, mira, canta, suelta, chivate, di | print, display, exhibit, present, render, indicate, output, show, tell, say, spill, shout, blurt, dish
+  pedir: solicitar, preguntar, dime, dame, pasa | input, ask, request, prompt, query, gimme, cough_up
+  en_caso_de_que: si, en_el_caso_de_que, siempre_que, dado_que, si_es_que, cuando | if, in_case_that, provided_that, given_that, when, suppose, assuming
+  sino: si_no, de_lo_contrario, en_caso_contrario, en_otro_caso, pero | else, if_not, or_else
+  fin: final, termina_aqui, se_acabo, basta, listo, ya | end, finish, done, over, enough, finito
+  mientras: dale | while, whilst, as_long_as, keep_going
+  funcion: procedimiento, rutina | function, procedure, routine, sub, method
+  devolver: retornar, entregar | return, give_back, hand_back, yield
+  y: e, con | and, with
+  o: u | or
+  no: (base) | not, aint
+  igual: es, vale, equivale_a | equal, equals, is, comes_to (+es_igual_a/is_equal_to base)
+  mas: suma | plus, add*
+  menos: resta, quita | minus, subtract, deduct, take_away
+  por: multiplica, veces | times, multiply, multiplied_by
+  entre: divide, dividido_entre, dividido_por | divide, divided_by, over
+  es_mayor_que: mayor_que, mas_grande_que, supera_a | is_greater_than, greater_than, bigger_than, exceeds
+  es_menor_que: menor_que, mas_chico_que, mas_pequeno_que, no_llega_a | is_less_than, less_than, smaller_than
+  es_distinto_de: distinto_de, diferente_de | is_different, is_not, differ_from
+  es_mayor_o_igual: (base) | is_greater_or_equal
+  es_menor_o_igual: (base) | is_less_or_equal
+  verdad: verdadero, cierto, simon | true, right, yup
+  falso: mentira, nel | false, wrong, nope
+  lista: coleccion, conjunto, grupo | list, collection, group, bunch, pile, array, set
+  vacia: sin_nada | empty, blank
+  elemento: pieza, parte, miembro, casilla | element, item, member, entry, cell
+  primero: cabeza | first, head
+  ultimo (+último): cola | last, tail
+  longitud: largo, tamano | length, size, count
+  agregar: añadir, anadir, meter | add, append, attach, stick_in, toss_in, push
+  quitar: sacar, eliminar, borrar, remover | remove, delete, drop, take_out, erase
+  de: (base) | of, from
+  a: (base) | to
+  en: dentro, dentro_de | in, inside, within
+  registro: ficha, caja, paquete | record, card, file, packet, struct
+  poner: mete, coloca, asigna, fija | put, place, set, assign, store
+  puntero: dedo | pointer, finger
+  para: alto, detente, frena | stop, halt
+  sigue: continua, continúa | continue, carry_on, go_on
+  por_cada: cada | for_each, each, for_every
+  como: (base) | as
+  segun: depende | match, switch, depending_on
+  caso: digamos | case
+  otro: resto | other, otherwise, default
+- Reglas de posición (misma palabra, dos sentidos): add (infijo=mas, sentencia=agregar), con/with (solo uniendo argumentos), y (en llamada separa, fuera es AND), otherwise (es otro, no sino), when (es en_caso, no caso), end (es fin, no ultimo), over (cierre=fin, infijo=entre), set (solo verbo poner; como nombre usa conjunto), lee (con `y` = casilla del tablero; con un nombre = línea del fichero), eliminar (con `de` = lista; sin `de` = fichero). [OK]
+- OLEADA 2 (~150 alias más): mostrar +pregona/anuncia/declara/revela/descubre/grita/cuenta/relata/narra/detalla/pinta/dibuja/escribe/imprime/publica/emite/proyecta/refleja/escupe/vomita/write/draw/paint/announce/proclaim/declare/reveal/narrate/relate/detail/publish/emit/project/type/echo/log/dump/spew/vomit; pedir +pide/atiende/recibe/recoge/acepta/toma/agarra/pilla/cuentame/get/read/scan/fetch/collect/receive/accept/grab/tell_me; en_caso +si_acaso/por_si/por_si_acaso/puesto_que/ya_que/a_ver_si/y_si/lest/on_condition_that/in_the_event_that/what_if; sino +de_otra_forma/de_otra_manera/en_su_defecto/instead/alternatively/failing_that; fin +terminado/terminada/acabado/acabada/concluido/cerrado/punto_final/se_termino/hasta_aqui/colorin_colorado/he_dicho/caso_cerrado/amen/fin_transmision/finished/completed/concluded/closed/period/mic_drop/case_closed/over_and_out/end_of_transmission/thats_all/the_end/cut; mientras +en_bucle/en_loop/dale_dale/vamos/arre/loop/go_go; funcion +faena/chamba/laburo/curro/mision/encargo/cometido/subrutina/proceso/job/chore/gig/duty/errand/operation/func/def/proc; devolver +regresa; mas +increased_by/up_by; menos +sustrae/descuenta/decreased_by/down_by; por +x; entre +reparte/split; comparaciones +gana_a/pierde_contra/empata_con/pasa_de/no_pasa_de/rebasa/beats/loses_to/ties_with/surpasses/tops/es_lo_mismo/matches/reads; verdad +sip/positivo/afirmativo/yep/yeah/uh_huh/correcto/correcta/exacto/exacta/correct/exact/precisely; falso +negativo/ni_a_palos/nanai/negative/no_sir; lista +serie/sucesion/tanda/ristra/retahila/manojo/monton/fila/hilera/lineup/roster/series/sequence/succession/batch/row/queue/chain/string; vacia +hueca/zilch/zip/nada; elemento +trozo/pedazo/cacho/fragmento/eslabon/unidad/componente/chunk/piece/bit/fragment/link/unit/component/thing; primero +numero_uno/campeon/ganador/inicial/number_one/champ/champion/winner/initial/first_off; ultimo +colista/farolillo/farolillo_rojo/ultimo_mono/perdedor/dead_last/loser/caboose; longitud +medida/extension/measurement/extent/span; agregar +incorpora/integra/inyecta/anexa/adjunta/inject/incorporate/integrate; quitar +extrae/arranca/desecha/tira/bota/expulsa/extract/yank/toss/chuck/ditch/discard; de +out_of; a +into; en +dentro/dentro_de(already)/inside/within(already); registro +cajon/carpeta/formulario/folder/form/binder/slip; poner +planta/deposita/deja/lay/stick/leave/deposit; puntero +indicador/señalador/flecha/indicator/cursor; para +frenazo/quieto/para_ya/freeze/hold_on/whoa; sigue +adelante/palante/sigue_sigue/onward/onwards/proceed; por_cada +uno_a_uno/one_by_one/foreach; o +o_bien; no +nada_de/ni_de_broma/nah/no_way/ni_muerto. Restricciones que quedan: sustrae y suelta solo valen en su sentido principal; si_no/or_else no tienen forma separada; sin conjugaciones (salvo muestra/enseña/mira/di/dime/dame heredadas). [OK]
+
+16. COMPILADOR
+- Frontend Nim -> LLVM IR -> -O2/-O3 -> triple+cpu -> objeto -> enlazado. [OK]
+- Modos: antiguo (defecto: x86-64-v1/i686/ARMv8) moderno (v3/AVX2) mixto v2 (binario inteligente: despachador + clones | caliente |). [OK]
+- Meta: empate con C en todo (exigido), victoria en casos corona: arrays de enteros pequeños, bucles sin aliasing. Corpus de benchmarks que lo demuestra. [OK]
+- Corona redefinida: EL EMPATE MÁS LO HUMANO/BILINGÜE ES LA CORONA. Las victorias puntuales son bonus, no supervivencia. [OK]
+- Propósito v1: scripting de Agmine (recarga caliente, entidades por ID); general después. [OK]
+- Driver v0.2 (coma/nim/coma.nim): control+pedir+comparaciones+runtime; E2xx honesto para funciones/listas. Examen final SUPERADO: coma/juego/estacion.coma compila a estacion.exe (via zig cc) y se juega hasta VICTORIA. [OK]
+- Segundo juego: coma/juego/mario.coma + mario_en.coma (plataformas por turnos). JUGABLES: victoria 30pts, derrota, EN/ES. pedir robusto (doble scanf: lineas vacias no atascan). Fuerza el cambio: tick/tiempo real (pedir bloquea), graficos via motor, listas para N entidades. [OK]
+- Mario auto (mario_auto.coma + mario_auto_en.coma): tick 5 sin enter, IA que salta sola, victoria 30pts en ~4.1s reales. [OK]
+- Mario HUD (mario_hud.coma + mario_hud_en.coma): una sola línea viva vía pisa (ES 5 saltos/425 retornos, EN igual), victoria 30pts. [OK]
+- Demo técnica total: coma/juego/mazmorra.coma (+mazmorra_en.coma): presets del sistema en vivo (Hora/Fecha/Sistema/Usuario/Versión/Directorio), chistes en lista de texto con azar, comprobar que corre al arrancar, crítico con y_bit, magia 0x25, hazaña en fichero y telégrafo TCP optativo. Se juega directo en el .exe (sin .bat). [OK]
+- Demos coloquiales (coma/ejemplos/coloquial.coma + colloquial.coma): el diccionario compila y CORRE (78.5, caro.). [OK]
+- Plataformas v1: Windows x64/x86, Android ARM64. [?]
+
+17. PUNTEROS (simples a propósito)
+- Crear/re-apuntar: `puntero Alias a Original.` (EN pointer to). Primera vez declara; luego re-apunta. Sin comillas: son nombres, no textos (así valen typos, scope y eñes). [OK]
+- `igual` sobre un alias ESCRIBE A TRAVÉS (cambia el objetivo). `igual` nunca re-apunta. Leer el alias lee el objetivo: alias transparente, sin operador extra. [OK]
+- Siempre ligados al nacer (no existe nulo). El tipo lo hereda del primer objetivo; re-apuntar a otro tipo = error. [OK]
+- v1: solo a variables enteras (variable, lista, registro). A elementos (Elemento 3 de L), v2. [OK]
+- No salen de su función (no devolver, no guardar en listas): lo colgado se caza en compilación. [OK]
+- Recarga caliente: los punteros mueren con ella; usarlos después = error E104 humano (créalos de nuevo). [OK]
+- Corona: lo apuntado pasa a aliasable; TODO LO DEMÁS conserva noalias (C es aliasable en todas partes por defecto: seguimos ganando). [OK]
+
+18. MÓDULOS TRAER (dentro de Coma, cero dependencias)
+- `traer Guitarra.` importa coma/lib/guitarra.coma (o junto al fuente): entran sus `funcion`/`registro`, el código suelto no se ejecuta al importar. Recursivo, anti-ciclos, orden libre total (dos pasadas: firmas de todos antes que cuerpos). Repetido = se ignora; colisión de firmas = E003; ausente = E001 con ruta. [OK]
+- Llamadas sin argumentos: `Verde.` / `Verde y Roja.` valen si la firma existe (pre-escaneo; si no, es variable como siempre). Sin esto las librerías no se podían usar. [OK]
+- Firma propia: `Agmine.` imprime `creado por Agmine` y devuelve 0 (vale en cualquier sitio, sin declarar; solo se emite si se usa). [OK]
+- Librerías dentro del lenguaje: coma/lib/mando.coma (BotonA/B, cruz, Start, AlgunBoton) y coma/lib/guitarra.coma (Verde, Roja, Amarilla, Azul, Naranja, Pua, Palanca, Acorde). Demo: coma/ejemplos/trae.coma. [OK]
+- Mangle: cada función de módulo vive como modulo__F (conviven homónimos; el main manda en local; dos módulos iguales = ambiguo honesto). Sin mangle no hay ecosistema. [OK]
+- Sin topes de datos: texto y listas en heap con free (sin 256/64); listas como arg (copia) y retorno (copia); registros con campos tipados; pedir numérico con E103; cambio de tipo decidido (E202); tick con FIFO y teclado evdev real en Linux. [OK]
+- LÍMITE HONESTO v1: sin mangle (un nombre = una firma en todo el programa); el estado del módulo son los globals del programa; `usar` (FFI a C) sigue abierto.
+
+18b. ABIERTO (sin decidir) + RECHAZADO
+- Formateador, Closures (captura de verdad). Tick cuadros/engine (Actualizar por frame), pedir no bloqueante. Args CLI. Renglón de registro como valor.
+- usar/FFI a C: RECHAZADO por filosofía (competimos, no nos apoyamos). Todo entra por coma/lib o primitivas propias.
+
+19. TICKS Y DELTA
+- `tick 60.` ... `fin.` = bucle a N ticks/segundo (tasa entera positiva). `tick cuadros.`/`tick frames.` = al ritmo del motor: SOLO bajo Agmine, en standalone es E202. [OK]
+- Aperturas equivalentes: tick, ticks, fps, fotogramas, fotograma, ritmo, tps, tiempo, cuadro, cuadros, frames, framerate, rate. `tiempo` manda, `Tiempo` mide (mayúscula mediante). Sin operando (`tick.`) = modo motor. [OK]
+- 	ick 0. / 	ick turbo. = libre: sin tope, Delta real medido con QPC (microsegundos). Medido: 200000 ticks suman Tiempo exacto. [OK]
+- `Delta` (segundos del tick; constante 1/N en fijo) y `Tiempo`/`Time` (acumulado desde 0): SOLO LECTURA, asignar es E202. [OK]
+- Espera por rebanadas con FIFO 16 (en el runtime, no en tu IR): el tick fijo muestrea cada 1 ms y ningún tap rápido se pierde; `Tecla` hace pop (llena = se queda). Teclado evdev en Linux = estado real de mantenida (con permiso); si no, latch 300 ms como macOS. [OK]
+- Vistas del Delta (se traducen a expresiones, pliegan en fijo): Segundos/segundo/seconds/second (=Delta), Minutos/minuto/minutes/minute (=Delta/60), Horas/hora/hours/hour (=Delta/3600), Milisegundos/milisegundo/milliseconds/millisecond (=Delta*1000), Tiempo_real (=Tiempo). Reservadas: asignarlas es E202. [OK]
+
+20. PANTALLA FIJA
+- `pisa` (+encima | overwrite, overprint, rewrite): reescribe la MISMA línea (retorno de carro + limpia 80 cols, sin bajar). Compone: pisa "Pos ". pisa X. pisa " Pts ". pisa Y. [OK]
+- Rachas seguidas comparten UNA limpieza (1 borrado + N valores por racha; antes era 1 por pieza y parpadeaba). `mostrar` tras pisa baja de línea solo (bandera interna sucia). Límite v0.3: una línea fija (multi-línea = ANSI futuro). Demostrado: hud de Mario (48 retornos, 6 saltos en 21 ticks). [OK]
+- Patrón anti-cierre: pedir al final (`mostrar "Pulsa enter...". pedir Despedida.`) mantiene la ventana abierta; con entrada redirigida no se atasca. [OK]
+- Nota backend: printf compuesto de 10 args con 4+ loads falla en zig-cc/LLVM-21-windows-gnu (borde real, a revisar con LLVM oficial); por eso racha = 1 limpieza + N llamadas simples (todo probado). [OK]
+
+21. TECLADO REAL
+- `Tecla` (+`Key`): tecla pulsada AHORA MISMO sin enter ("" si ninguna), siempre en minúscula. Solo lectura (asignar = E202). Implementada con _kbhit/_getch/tolower. [OK]
+- **Espera por rebanadas (v0.3)**: el tick fijo no duerme a ciegas — muestrea inputs cada 1ms durante la espera, así un tap rápido entre frames no se pierde. Cola FIFO circular de 16 (llena se queda como está). `Tecla` hace pop de la cola; si vacía, lee directo (fallback). [OK]
+- **Flancos físicos**: WASD/flechas se muestrean por flanco de subida (antirrebote). Pulsación = cola, no estado — rápido se registra igual que lento. [OK]
+- **Flechas arregladas**: el driver captura el prefijo 224 (0xE0/0x00) y mapea el segundo byte 72/80/75/77 → w/s/a/d, tanto en cola como en lectura directa. [OK]
+- **Tablero dirty-check**: `tablero` compara con `memcmp` (12800 bytes) contra el frame anterior y salta el redibuja si nada cambió (mismo jugador, mismo `jmon`, misma `t_celdas`). Sin parpadeo innecesario. [OK]
+- LÍMITE HONESTO: Tecla solo ve TECLADO FÍSICO (consola real). Con entrada redirigida (tuberías/archivos) siempre da "" — para eso sigue existiendo pedir. Verificado por construcción + enlazado; la prueba con dedos la haces tú. [OK]
+- Coordenadas de pantalla: Y crece hacia abajo (W = Y menos 1). Juegos: coma/juego/wasd.coma + wasd_en.coma (mueven X/Y con WASD + HUD fijo, q sale). [OK]
+- `para.`/`sigue.` funcionan en tick y mientras (sin etiqueta en v0.3; fuera de bucle = E002). El tick es infinito por diseño: se sale con para. [OK]
+- Standalone Windows v0.3: reloj GetTickCount64 + Sleep por rebanadas (1ms), QPC para Delta en modo libre (tick 0). tick 5 con auto-salida + tablero verificado por ejecución (T1/T2/T3 + fin, exit 0). [OK]
+
+22. CONSOLA UNICODE + LIENZO (el driver pone píxeles, tú pones todo lo demás)
+- Todo programa arranca en UTF-8 (SetConsoleOutputCP/CP 65001) + VT habilitado (ENABLE_VIRTUAL_TERMINAL_PROCESSING): los Ôû eran la consola en CP850, no el lenguaje. Si falla (tubería), se ignora y los bytes UTF-8 siguen saliendo. [OK]
+- `limpiar.` (+limpia, despeja | clear, wipe, cls): limpia la pantalla (ANSI 2J + cursor arriba). Va UNA vez antes del bucle, no dentro. [OK]
+- `lienzo 10 y 8.` (+canvas): tamaño del tablero en casillas (1..40 por lado; fuera = E202). Sin lienzo = 10x8. Nace vacío. [OK]
+- `marca 4 y 2 con "█".` (+marcar, sella | mark, plot, stamp): pinta una casilla (literal de 7 bytes max o Nombre de texto; fuera del lienzo se ignora en silencio). Con "" se borra. `muro` (+pared, tapia, muralla, tapiar, amurallar | wall) = marca con "█"; `moneda` (+coin) = marca con "○" + guarda tesoro; `meta` (+destino, llegada | goal) = marca con "♦" + guarda meta. [OK]
+- `lee 4 y 2` (+leer, chusmea, consulta | peek): lo que hay en la casilla ("" si vacía). Vive DENTRO de frases: `lee X y Y es_igual_a "█".`, `mostrar lee 1 y 1.`, `segun lee DestX y DestY.` (despacha por glifo), y suelto significa "hay algo". Suelto en línea = E202 que enseña el uso. [OK]
+- `tablero X y Y.` / `tablero X y Y y Tiene_moneda.` (+pizarra | board): redibuja EN SU SITIO lo marcado + jugador ☺, moneda ○ salvo cogida, meta ♦. [OK]
+- Patrón de juego: lienzo + declarar (muro/moneda/meta, valen en bucles) + limpiar. + tick 10. (mover con Tecla, UNA regla `segun lee DestX y DestY.` con `caso "█".`, tablero, pisa HUD) + fin. Juegos: coma/juego/rpg.coma + rpg_en.coma (112 líneas, regla única). [OK]
+- LÍMITE HONESTO: celdas de 8 bytes (glifos cortos), lienzo max 40x40, sin listas el tablero no se lee en bloque (solo casilla a casilla). tick 10 parpadea poco; turbo ni se te ocurra.
+- Por tubo el VT lo pone el lanzador: jugar_mazmorra.ps1 activa VT + UTF-8 en la consola anfitriona y guarda sesion-fecha.log con EXITCODE (sin VT el mapa hace scroll). `limpiar.` resetea sucia y foto: cada pelea/contexto empieza en pantalla virgen. [OK]
+
+23. RENDIMIENTO (empatar con C cuesta: esto es lo medido)
+- Unión inteligente sin costo: `es igual a`/`is equal to` pliegan al mismo AST que `es_igual_a` (rpg 115 líneas, 0 plegados, idéntico). El showcase se escribe humano. [OK]
+- Anchos mínimos: i8/i16/i32 por uso real (no todo-i32 como C descuidado); plegado y propagación de constantes en prescan. La propagación invalida lo que `leer`/`recibir` escriben (si no, mentía con el valor inicial). [OK]
+- Tablero a 1 printf: marco en bufer de pila (celdas 3 bytes, suelo ⋅ U+22C5) + un solo `%s` por dibujo (antes ~89 llamadas). Sin loads en el printf gordo (borde zig-cc/LLVM-21). Dirty-check con memcmp salta frames quietos. [OK]
+- `zig cc -O2` vale sobre nuestro IR: bucle 5M suma 87→25ms (luego ~27→~17, mismo resultado 1642668640). El backend LLVM es gratis: nuestro trabajo es IR afinado y pocas syscalls, no pelear con el optimizador. [OK]
+- GANAR, no empatar (medido 2026-10-12, duelo/ con mismo -O2): plegado real en sema (46 en el IR, la demo ya es verdad); params `noalias nocapture` (las copias entrantes no escapan: C no puede prometerlo); tablero a 1 printf con dirty por bandera (event-driven, no polling de 12 KB) + reposicionado en 1 syscall + ramas muertas podadas con literal; `_kbhit` sin consola cacheado a ns (6 ms cazados). Render 301 frames: Coma 31,5 vs C 33,1 ms (-4,9 %, mismo dibujo al byte); núcleo y bench empatados; binarios +0,5–3 %. La corona ya no es promesa. [OK]
+- LÍMITE HONESTO: C sigue ganando en backend maduro y cero-coste real; Coma gana en especialización por construcción (tipos, dibujo, inputs). La brecha que queda es suya (asignación de registros, vectorización), no nuestra: la heredamos con LLVM.
+- C vs Coma medido (mismo algoritmo suma 1..2000M, ambos -O2): C 27,9ms/2560KB, Coma 21,9ms/2564KB, mismo resultado 321730048. LLVM reconoce el idioma en los dos (mide arranque). Empate en CPU y RAM en cómputo; en juegos manda la consola (1 printf/dibujo, dirty-check) donde se diseñó para ganar. Chequeos E101/E102 cuestan unas instrucciones por acceso (el precio de no corromper memoria).
+
+24. TIEMPO Y AZAR
+- `esperar 2.` (+espera, aguarda | wait): pausa en segundos (vale decimal: `esperar 0,5.` y Nombre; negativo = 0). Dentro de tick alarga el frame (resincroniza, no espiral). [OK]
+- `azar 6.` (+aleatorio): entero 1..N (vale Nombre: `azar Caras.`; N<=0 con variable = 1). Semilla de reloj al arrancar. Justo hasta el dado que importa. [OK]
+
+25. PORTABILIDAD Y MANDO (adiós Windows-only)
+- La IR ya no llama a Win32: solo libc + `coma_*` de coma/rt (rt_win.c / rt_unix.c, el driver elige por --target y lo enlaza). Mismo .coma, mismo IR, otro binario: `coma juego.coma --target:x86_64-linux`. Verificado: nucleo enlaza a ELF (sueño: correrlo; aquí no hay Linux). [OK]
+- `Mando` (+pad, gamepad, joystick, palanca, guitarra, control, controller, arcade, volante | *mismos EN*): primo de Tecla para padoles, palancas y guitarras de Guitar Hero. `Mando "a"` / `Mando "verde"` = apretado AHORA (vale diagonal y acordes: cada botón se pregunta por su cuenta); `Mando` solo = último botón ("" si ninguno). Solo lectura. [OK]
+- Trastes: "verde" "roja" "amarilla" "azul" "naranja" (+EN green/red/yellow/blue/orange). Púa: "rasgueo arriba/abajo" (+pua/strum). Palanca/whammy, inclinación/tilt, start/select, cruceta "arriba/abajo/izquierda/derecha", a/b/x/y/lb/rb. Demo: coma/ejemplos/mando.coma (sin mando todo da falso y sale limpio). [OK]
+- Fuentes: Windows XInput (carga dinámica, sin .lib) + winmm para guitarras/adaptadores DirectInput (trastes 0-4, POV = púa); Linux evdev (/dev/input, grupo `input`; BTN_0-4 o A/B/X/Y/LB = trastes); macOS = 0 mandos (falta IOKit, honesto). Tecla "x" en Unix = latch 300 ms (el terminal repite al mantener, así que los mantenidos valen; en Windows es estado real). [OK]
+- LÍMITE HONESTO: sin hardware aquí solo se prueba el camino "sin mando" (falso/""); botones raros de adaptadores exóticos pueden variar (ver tabla en coma/rt/coma_rt.h).
+
+26. FICHEROS (sesión única, sin handles a propósito: los vagos no los siguen)
+- `abrir "notas.txt".` (existe; si no, E105) / `crear "nuevo.txt".` (vacía, trunca) / `leer Linea.` (siguiente línea; EOF = "") / `escribir X.` (texto/entero/decimal + salto) / `cerrar.` / `eliminar "viejo.txt".` (cierra sola si era la abierta). Abrir/crear cierran la anterior solas; al salir se cierra sola. [OK]
+- `eliminar` hace doble sentido por forma (como `igual` o `add`): `Quitar 5 de L.` es lista; `eliminar "f.txt".` es fichero (sin `de` no hay lista). `Quitar 5.` a secas = E001 limpio, no cascada. [OK]
+- Todo error es E105 + exit(1), nunca silencio: `E105 abrir: no se puede (f.txt). Falta el fichero o permiso denegado (prueba consola de administrador).` Sin baile UAC (eso es UX del SO, no del lenguaje). Multiplataforma en coma/rt/rt_fs.c (libc pura). [OK]
+
+27. PRESETS DEL SISTEMA (solo lectura, como Tiempo; asignar no compila)
+- `Hora` (14:35:02), `Fecha` (2026-10-12), `Usuario` (login por entorno), `Sistema` (Windows/Linux/macOS), `Version` (10.0.26100 / release del kernel), `Directorio` (cwd). Bilingües mínimos (hour/date/user/system/os/version + pwd/dir/cwd; `carpeta` sigue siendo registro: usa `directorio`). Demo: coma/ejemplos/sistema.coma (corre en cualquier tubo, sin consola). [OK]
+
+28. LITERALES HEXADECIMALES (para servidores, ciberseguridad y bajo nivel con ergonomía humana)
+- Soporte nativo de enteros en base 16 con prefijo `0x` o `0X` (admite separadores con guion bajo `0xCAFE_BABE` y negativos `-0x10`). [OK]
+- Mantiene la prosa y la simplicidad del lenguaje combinando código de máquina legible con la filosofía conversacional de Coma. Demo: coma/ejemplos/hex_test.coma. [OK]
+
+29. OPERADORES DE BITS (para máscaras de red, cifrado y flags binarios)
+- Operadores binarios de bits: `y_bit` (`&`), `o_bit` (`|`), `xor` (`^`), `desplaza_izquierda` (`<<`), `desplaza_derecha` (`>>`). Aliases bilingües y simbólicos integrados sin romper la ergonomía de prosa. Demo: coma/ejemplos/hex_test.coma. [OK]
+
+30. PRUEBAS AUTOMÁTICAS (`comprobar`/`check`: tests nativos dentro del lenguaje)
+- `comprobar "Descripción".` + condiciones + `fin.`: cada condición que falla imprime `[FAIL]` y detiene con exit(1); si todas pasan imprime `[OK]`. Bilingüe (prueba/test/verifica/check/assert...). Demo: coma/ejemplos/test_comprobar.coma. [OK]
+
+31. COMPARACIÓN HUMANA INSENSIBLE (`es_equivalente_a`/`is_equivalent_to`)
+- Compara textos ignorando mayúsculas/minúsculas (`"ATACA"` ≡ `"ataca"`): ideal tras `pedir` para comandos de jugador. Runtime `coma_stricmp` portable. Usado en coma/juego/mazmorra.coma (combate). [OK]
+
+32. REPL SIMPLE (un solo archivo temporal, sin guardar ni cargar)
+- coma/tools/repl/coma-repl.bat (+coma-repl.ps1): cada línea se suma a la sesión y se ejecuta todo junto al instante. Comandos `:ayuda :ver :limpiar :log :es :en :salir`. [OK]
+- Sin confusión: la línea que rompe la sesión se revierte sola y lo demás sigue intacto (la sesión siempre queda verde). [OK]
+- Diario opcional (`:log`): guarda sesion-fecha.log con fecha, líneas y decisiones — para guardar cómo aprendiste para el resto de tu vida. [OK]
+
+33. RED EN SESIÓN ÚNICA TCP (sin handles, como ficheros: los vagos no los siguen)
+- `conectar "host" 80.` (DNS + TCP; cierra la anterior sola; error = E106 + exit(1)) / `enviar X.` (texto/entero/decimal + salto) / `recibir Respuesta.` (una línea; fin/timeout 15 s = "") / `desconectar.` (callada sin conexión; al salir se cierra sola). Bilingüe (connect/send/receive/disconnect). Runtime coma/rt/rt_net.c (libc + ws2_32 en Windows). [OK]
+- LÍMITE HONESTO: solo TCP cliente (sin servidor, sin UDP, sin TLS: lo HTTPS queda para después); `enviar` añade CRLF (lo exige el HTTP real); `recibir` corta en 15 s con "" (no error).
+- Demo real: el telégrafo de coma/juego/mazmorra.coma trae un chiste de official-joke-api por HTTP plano (salta cabeceras con recibir hasta línea vacía). jokeapi.dev queda pendiente de TLS.
+
+34. IDE EN UN SOLO .EXE (coma/tools/ide/coma-ide.exe: GUI básica WinForms, cero dependencias)
+- Editor + LSP en tiempo real (diagnósticos de verdad vía coma.exe --ir, clic para ir a la línea) + recuadro del diccionario ES/EN con buscador + salida + botón `Guardar diario` (sesion-fecha.log con código, problemas y salida). Se compila con build.bat (csc del sistema). [OK]
+- Autocompletado 100% visual (v0.5): panel hijo que nunca roba el foco ni acepta clics, solo muestra las que coinciden; escribir es totalmente natural y SOLO Tab elige (completa la primera), Enter sigue siendo Enter, Esc cierra. Con prueba automática (--uitest) y verificación en ventana real. [OK]
+- Ejecutar sin esperas ciegas: salida del compilador línea por línea en vivo, compilación rápida (--opt:0), revisiones LSP serializadas (no se apilan); si el programa es juego (tick/tecla/mando) se abre en su propia ventana jugable, si no se ejecuta con captura y tope de 15 s. [OK]
+- coma/tools/ide/coma-ide.html v0.2 queda como versión web de respaldo (mismo diccionario y diario). coma/tools/ide/coma-lint.js al día (red, comprobar, bits, equivalente, artículos). [OK]

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>.Coma IDE v0.1</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #1e1e1e; color: #d4d4d4; font-family: Consolas, monospace; }
+  header { padding: 10px 14px; background: #252526; border-bottom: 1px solid #3c3c3c; }
+  header b { color: #ffd700; font-size: 18px; }
+  header span { color: #858585; font-size: 12px; margin-left: 10px; }
+  #bar { padding: 8px 14px; background: #2d2d2d; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  button, select { background: #0e639c; color: #fff; border: none; padding: 6px 12px; cursor: pointer; font-family: inherit; font-size: 13px; }
+  button:hover { background: #1177bb; }
+  select { background: #3c3c3c; }
+  #main { display: flex; gap: 10px; padding: 10px 14px; }
+  #editwrap { position: relative; flex: 3; height: 60vh; border: 1px solid #3c3c3c; }
+  #ed, #hl { margin: 0; padding: 10px; font: 14px/1.5 Consolas, monospace; white-space: pre; overflow: auto; }
+  #ed, #hl { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  #hl { pointer-events: none; }
+  #hl code { font: inherit; }
+  #ed { background: transparent; color: transparent; caret-color: #fff; border: none; outline: none; resize: none; }
+  .tok-com { color: #6a9955; } .tok-str { color: #ce9178; } .tok-kw { color: #569cd6; font-weight: bold; }
+  .tok-num { color: #b5cea8; } .tok-typ { color: #4ec9b0; } .tok-dot { color: #858585; }
+  #side { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 260px; }
+  #problems, #out, #dict { background: #252526; border: 1px solid #3c3c3c; padding: 8px; overflow: auto; }
+  #problems { height: 24vh; } #out { height: 20vh; white-space: pre-wrap; font-size: 13px; }
+  #dict { height: 26vh; font-size: 13px; }
+  #problems h3, #out h3, #dict h3 { margin: 0 0 6px; font-size: 13px; color: #858585; }
+  #dq { background: #3c3c3c; color: #fff; border: none; padding: 3px 6px; font-family: inherit; font-size: 12px; }
+  .dw { padding: 1px 4px; } .dw b { color: #4ec9b0; } .dw span { color: #9cdcfe; }
+  .iss { cursor: pointer; padding: 2px 4px; font-size: 13px; }
+  .iss:hover { background: #2d2d2d; }
+  .err { color: #f48771; } .wrn { color: #cca700; } .ok { color: #89d185; }
+</style>
+</head>
+<body>
+<header><b>.Coma IDE v0.2</b><span>editor + diccionario + diario — compilador Nim incluido</span></header>
+<div id="bar">
+  <button id="bOpen">Abrir .coma</button>
+  <button id="bSave">Guardar .coma</button>
+  <button id="bRun">Ejecutar (revisar)</button>
+  <select id="selEx">
+    <option value="">Ejemplos…</option>
+    <option value="oleada">Oleada (ES)</option>
+    <option value="wave">Wave (EN)</option>
+  </select>
+  <select id="selLang" title="Idioma del diccionario">
+    <option value="es">Diccionario: ES</option>
+    <option value="en">Dictionary: EN</option>
+  </select>
+  <button id="bLog">Guardar diario</button>
+  <button id="bClear">Limpiar</button>
+  <input type="file" id="file" accept=".coma,.txt" style="display:none">
+</div>
+<div id="main">
+  <div id="editwrap"><pre id="hl" aria-hidden="true"><code id="hlc"></code></pre><textarea id="ed" spellcheck="false"></textarea></div>
+  <div id="side">
+    <div id="problems"><h3>Problemas (clic para ir)</h3><div id="plist"><span class="ok">sin revisar</span></div></div>
+    <div id="out"><h3>Salida</h3><div id="outt">Pulsa Ejecutar para revisar el programa.</div></div>
+    <div id="dict"><h3>Diccionario <input id="dq" placeholder="buscar…" style="width:110px"></h3><div id="dlist"></div></div>
+  </div>
+</div>
+<script src="coma-lint.js"></script>
+<script>
+"use strict";
+var ed = document.getElementById("ed"),
+    hlc = document.getElementById("hlc"),
+    hl = document.getElementById("hl"),
+    plist = document.getElementById("plist"),
+    outt = document.getElementById("outt"),
+    current = [];
+
+var EXAMPLES = {
+oleada: "| Oleada 3: turno de los enemigos |\n| Corre una vez por frame |\n\nJefe1 igual registro Vida 30 y Ataque 5.\nJefe2 igual registro Vida 50 y Ataque 8.\nEnemigos igual lista Jefe1 y Jefe2.\nVida_jugador igual 100.\nPausado igual falso.\nJuego_activo igual verdad.\nPrecio_poción igual 3,14.\nOro igual 25000.\n\nDaño_total igual 0.\npor_cada E en Enemigos.\n    en_caso_de_que Vida de E es_menor_que 1 o Pausado.\n        sigue.\n    fin.\n    Daño_total igual Daño_total más Ataque de E.\nfin.\nVida_jugador igual Vida_jugador menos Daño_total.\nmostrar \"Te quedan.\".\nmostrar Vida_jugador.\n\nen_caso_de_que Juego_activo y no Pausado.\n    mostrar \"Sigue la oleada.\".\nfin.\n\nen_caso_de_que Vida_jugador es_menor_que 1.\n    mostrar \"Fin del juego.\".\nsino.\n    mostrar \"Aguanta.\".\nfin.\n\nfuncion Suma_daño A y B.\n    devolver A mas B.\nfin.\nDoble igual Suma_daño Daño_total y 10.\nmostrar Doble.\n\nJefe igual Elemento 1 de Enemigos.\npuntero Activo a Jefe.\nPoner 25 en Vida de Activo.\nmostrar Vida de Activo.\n\n| A igual B igual 5. es error: en dos líneas |\nB igual 5.\nA igual B.\n\nTurno igual 1.\nmientras Turno es_menor_que 4.\n    mostrar Turno.\n    Turno igual Turno mas 1.\nfin.\n\nObjetivo igual 0.\npor_cada E en Enemigos como Caza.\n    en_caso_de_que Vida de E es_mayor_que 0.\n        Objetivo igual E.\n        para Caza.\n    fin.\nfin.\nmostrar \"Gracias por jugar.\".\n",
+wave: "| Wave 3: enemy turn |\n| Runs once per frame |\n\nBoss1 equal record Health 30 and Attack 5.\nBoss2 equal record Health 50 and Attack 8.\nEnemies equal list Boss1 and Boss2.\nPlayer_health equal 100.\nPaused equal false.\nGame_on equal true.\nPotion_price equal 3,14.\nGold equal 25000.\n\nTotal_damage equal 0.\nfor_each E in Enemies.\n    if Health of E is_less_than 1 or Paused.\n        continue.\n    end.\n    Total_damage equal Total_damage plus Attack of E.\nend.\nPlayer_health equal Player_health minus Total_damage.\nprint \"Left.\".\nprint Player_health.\n\nif Game_on and not Paused.\n    print \"Wave goes on.\".\nend.\n\nif Player_health is_less_than 1.\n    print \"Game over.\".\nelse.\n    print \"Hold on.\".\nend.\n\nfunction Add_damage A and B.\n    return A plus B.\nend.\nDouble equal Add_damage Total_damage and 10.\nprint Double.\n\nBoss equal Element 1 of Enemies.\npointer Active to Boss.\nput 25 in Health of Active.\nprint Health of Active.\n\n| A equal B equal 5. is an error: write it in two lines |\nB equal 5.\nA equal B.\n\nTurn equal 1.\nwhile Turn is_less_than 4.\n    print Turn.\n    Turn equal Turn plus 1.\nend.\n\nTarget equal 0.\nfor_each E in Enemies as Hunt.\n    if Health of E is_greater_than 0.\n        Target equal E.\n        stop Hunt.\n    end.\nend.\nprint \"Thanks for playing.\".\n"
+};
+
+var KWSET = {};
+ComaLint.keywords.forEach(function (w) { KWSET[w] = true; });
+
+function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+function highlightLine(line) {
+  var out = "", i = 0, n = line.length;
+  while (i < n) {
+    var c = line[i];
+    if (c === '"') {
+      var j = i + 1, s = '"';
+      while (j < n) {
+        if (line[j] === '"') {
+          if (j + 1 < n && line[j + 1] === '"') { s += '""'; j += 2; }
+          else { s += '"'; j++; break; }
+        } else { s += line[j]; j++; }
+      }
+      out += '<span class="tok-str">' + esc(s) + "</span>"; i = j;
+    } else if (c === "|") {
+      out += '<span class="tok-com">' + esc(line.slice(i)) + "</span>"; break;
+    } else if (/[0-9]/.test(c)) {
+      var m = line.slice(i).match(/^[0-9]+(,[0-9]+)?/);
+      out += '<span class="tok-num">' + esc(m[0]) + "</span>"; i += m[0].length;
+    } else if (/[A-Za-z_áéíóúñüÁÉÍÓÚÑÜ]/.test(c)) {
+      var w = line.slice(i).match(/^[A-Za-z_áéíóúñüÁÉÍÓÚÑÜ]+/)[0];
+      if (KWSET[w]) out += '<span class="tok-kw">' + esc(w) + "</span>";
+      else if (/^[A-ZÁÉÍÓÚÑÜ]/.test(w)) out += '<span class="tok-typ">' + esc(w) + "</span>";
+      else out += esc(w);
+      i += w.length;
+    } else if (c === ".") {
+      out += '<span class="tok-dot">.</span>'; i++;
+    } else { out += esc(c); i++; }
+  }
+  return out;
+}
+
+function render() {
+  var lines = ed.value.split("\n"), h = [];
+  for (var i = 0; i < lines.length; i++) h.push(highlightLine(lines[i]));
+  hlc.innerHTML = h.join("\n") + "\n";
+  hl.scrollTop = ed.scrollTop; hl.scrollLeft = ed.scrollLeft;
+}
+
+function showIssues(issues) {
+  current = issues;
+  if (!issues.length) { plist.innerHTML = '<span class="ok">0 problemas — pinta bien.</span>'; return; }
+  var h = "";
+  for (var i = 0; i < issues.length; i++) {
+    var s = issues[i];
+    h += '<div class="iss ' + (s.level === "error" ? "err" : "wrn") + '" data-i="' + i + '">'
+      + "linea " + s.line + " [" + s.code + "] " + esc(s.msg) + "</div>";
+  }
+  plist.innerHTML = h;
+  var divs = plist.getElementsByClassName("iss");
+  for (var k = 0; k < divs.length; k++) {
+    divs[k].onclick = function () {
+      var s = current[+this.getAttribute("data-i")];
+      gotoLine(s.line);
+    };
+  }
+}
+
+function gotoLine(ln) {
+  var lines = ed.value.split("\n"), pos = 0, i;
+  for (i = 0; i < ln - 1 && i < lines.length; i++) pos += lines[i].length + 1;
+  ed.focus();
+  ed.setSelectionRange(pos, pos + (lines[ln - 1] || "").length);
+  var lh = 21;
+  ed.scrollTop = Math.max(0, (ln - 3) * lh);
+  render();
+}
+
+var timer = null;
+ed.addEventListener("input", function () {
+  render();
+  clearTimeout(timer);
+  timer = setTimeout(function () { showIssues(ComaLint.lintSource(ed.value)); }, 400);
+});
+ed.addEventListener("scroll", render);
+ed.addEventListener("keydown", function (e) {
+  if (e.key === "Tab") {
+    e.preventDefault();
+    var s = ed.selectionStart;
+    ed.setRangeText("    ", s, ed.selectionEnd, "end");
+    render();
+  }
+});
+
+document.getElementById("bRun").onclick = function () {
+  var issues = ComaLint.lintSource(ed.value);
+  showIssues(issues);
+  var errs = issues.filter(function (s) { return s.level === "error"; }).length;
+  var nlines = ed.value.split("\n").length;
+  if (errs) outt.textContent = "No se puede ejecutar: hay " + errs + " error(es). Arreglalos arriba.";
+  else outt.textContent = "Revision superada (" + nlines + " lineas, 0 errores). La ejecucion llegara con el frontend Nim.";
+};
+
+document.getElementById("bOpen").onclick = function () { document.getElementById("file").click(); };
+document.getElementById("file").onchange = function (e) {
+  var f = e.target.files[0];
+  if (!f) return;
+  var r = new FileReader();
+  r.onload = function () { ed.value = String(r.result); render(); showIssues(ComaLint.lintSource(ed.value)); };
+  r.readAsText(f, "utf-8");
+  e.target.value = "";
+};
+document.getElementById("bSave").onclick = function () {
+  var b = new Blob([ed.value], { type: "text/plain;charset=utf-8" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(b);
+  a.download = "programa.coma";
+  a.click();
+  setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+};
+document.getElementById("selEx").onchange = function (e) {
+  var v = e.target.value;
+  if (v && EXAMPLES[v]) { ed.value = EXAMPLES[v]; render(); showIssues(ComaLint.lintSource(ed.value)); }
+  e.target.value = "";
+};
+document.getElementById("bClear").onclick = function () {
+  ed.value = ""; render(); showIssues([]);
+  outt.textContent = "Pulsa Ejecutar para revisar el programa.";
+};
+
+var DICC = [
+{c:"mostrar", es:["enseñar","exponer","muestra","mira","di"], en:["print","display","show","tell","say"]},
+{c:"pedir", es:["solicitar","preguntar","dime","dame"], en:["input","ask","request","prompt"]},
+{c:"en_caso_de_que", es:["si","cuando","siempre_que","dado_que"], en:["if","when","provided_that"]},
+{c:"sino", es:["si_no","pero","de_lo_contrario"], en:["else","if_not","or_else"]},
+{c:"fin", es:["final","basta","listo","ya"], en:["end","finish","done","over"]},
+{c:"mientras", es:["dale"], en:["while","whilst","as_long_as"]},
+{c:"funcion", es:["procedimiento","rutina"], en:["function","procedure","sub"]},
+{c:"devolver", es:["retornar","entregar"], en:["return","give_back","yield"]},
+{c:"y", es:["e","con"], en:["and","with"]},
+{c:"o", es:["u"], en:["or"]},
+{c:"no", es:[], en:["not","aint"]},
+{c:"igual", es:["es","son","vale"], en:["equal","is","are"]},
+{c:"mas", es:["suma"], en:["plus","add"]},
+{c:"menos", es:["resta","quita"], en:["minus","subtract"]},
+{c:"por", es:["multiplica","veces"], en:["times","multiply"]},
+{c:"entre", es:["divide"], en:["divide","divided_by"]},
+{c:"es_mayor_que", es:["mayor_que","mayor_a","supera_a"], en:["is_greater_than","greater_than"]},
+{c:"es_menor_que", es:["menor_que","menor_a","mas_chico_que"], en:["is_less_than","less_than"]},
+{c:"es_distinto_de", es:["distinto_de","distinto_a","diferente_de"], en:["is_different","differ_from","different_to"]},
+{c:"es_mayor_o_igual", es:["mayor_o_igual_a"], en:["is_greater_or_equal"]},
+{c:"es_menor_o_igual", es:["menor_o_igual_a"], en:["is_less_or_equal"]},
+{c:"es_equivalente_a", es:["equivalente_a"], en:["is_equivalent_to","equivalent_to"]},
+{c:"verdad", es:["verdadero","cierto","simon"], en:["true","right","yup"]},
+{c:"falso", es:["mentira","nel"], en:["false","wrong","nope"]},
+{c:"lista", es:["coleccion","grupo"], en:["list","array","set"]},
+{c:"vacia", es:["sin_nada"], en:["empty","blank"]},
+{c:"elemento", es:["pieza","casilla","id"], en:["element","item","cell"]},
+{c:"primero", es:["cabeza"], en:["first","head"]},
+{c:"ultimo", es:["cola"], en:["last","tail"]},
+{c:"longitud", es:["largo","tamano"], en:["length","size","count"]},
+{c:"agregar", es:["añadir","meter"], en:["add","append","push"]},
+{c:"quitar", es:["sacar","eliminar","borrar"], en:["remove","delete","drop"]},
+{c:"de", es:[], en:["of","from"]},
+{c:"a", es:[], en:["to"]},
+{c:"en", es:["dentro"], en:["in","inside"]},
+{c:"registro", es:["ficha","caja"], en:["record","struct"]},
+{c:"poner", es:["mete","coloca"], en:["put","place","set"]},
+{c:"puntero", es:["dedo"], en:["pointer","finger"]},
+{c:"para", es:["alto","detente"], en:["stop","halt"]},
+{c:"sigue", es:["continua"], en:["continue","carry_on"]},
+{c:"por_cada", es:["cada"], en:["for_each","each"]},
+{c:"como", es:[], en:["as"]},
+{c:"segun", es:["depende"], en:["match","switch"]},
+{c:"caso", es:["digamos"], en:["case"]},
+{c:"otro", es:["resto"], en:["other","otherwise","default"]},
+{c:"tick", es:["ritmo","fotogramas"], en:["fps","frames"]},
+{c:"esperar", es:["espera","aguarda"], en:["wait"]},
+{c:"azar", es:["aleatorio"], en:["random"]},
+{c:"limpiar", es:["limpia","despeja"], en:["clear","wipe","cls"]},
+{c:"lienzo", es:[], en:["canvas"]},
+{c:"marca", es:["marcar","sella"], en:["mark","plot","stamp"]},
+{c:"tablero", es:["pizarra"], en:["board"]},
+{c:"pisa", es:["encima"], en:["overwrite","rewrite"]},
+{c:"lee", es:["leer","chusmea"], en:["peek"]},
+{c:"comprobar", es:["prueba","verifica"], en:["check","test","assert"]},
+{c:"conectar", es:["conecta"], en:["connect"]},
+{c:"enviar", es:["envia","manda"], en:["send"]},
+{c:"recibir", es:["recibe"], en:["receive","recv"]},
+{c:"desconectar", es:["desconecta","cuelga"], en:["disconnect"]},
+{c:"y_bit", es:[], en:["bit_and","and_bit"]},
+{c:"o_bit", es:[], en:["bit_or","or_bit"]},
+{c:"xor", es:["exclusivo_o"], en:["bit_xor"]},
+{c:"desplaza_izquierda", es:[], en:["shift_left","shl"]},
+{c:"desplaza_derecha", es:[], en:["shift_right","shr"]},
+{c:"tecla", es:[], en:["key"]},
+{c:"tiempo", es:[], en:["time"]},
+{c:"delta", es:["segundo"], en:["dt","step"]}
+];
+
+var dictLang = "es";
+function renderDict() {
+  var q = document.getElementById("dq").value.toLowerCase();
+  var h = "";
+  for (var i = 0; i < DICC.length; i++) {
+    var e = DICC[i];
+    var words = e[dictLang];
+    var hay = e.c.toLowerCase().indexOf(q) >= 0;
+    for (var k = 0; k < words.length && !hay; k++) hay = words[k].toLowerCase().indexOf(q) >= 0;
+    if (q && !hay) continue;
+    h += '<div class="dw"><b>' + esc(e.c) + "</b> <span>" + esc(words.join(", ")) + "</span></div>";
+  }
+  document.getElementById("dlist").innerHTML = h || '<span class="ok">sin resultados</span>';
+}
+document.getElementById("dq").addEventListener("input", renderDict);
+document.getElementById("selLang").onchange = function (e) {
+  dictLang = e.target.value;
+  renderDict();
+};
+document.getElementById("bLog").onclick = function () {
+  var ahora = new Date();
+  var f = "sesion-" + ahora.getFullYear()
+    + ("0" + (ahora.getMonth() + 1)).slice(-2) + ("0" + ahora.getDate()).slice(-2)
+    + "-" + ("0" + ahora.getHours()).slice(-2) + ("0" + ahora.getMinutes()).slice(-2)
+    + ("0" + ahora.getSeconds()).slice(-2) + ".log";
+  var issues = ComaLint.lintSource(ed.value);
+  var txt = "== diario .Coma (" + dictLang + ") " + ahora.toString() + " ==\n"
+    + "--- codigo ---\n" + ed.value + "\n--- problemas (" + issues.length + ") ---\n";
+  for (var i = 0; i < issues.length; i++) txt += "linea " + issues[i].line + " [" + issues[i].code + "] " + issues[i].msg + "\n";
+  var b = new Blob([txt], { type: "text/plain;charset=utf-8" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(b);
+  a.download = f;
+  a.click();
+  setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  outt.textContent = "Diario guardado como " + f + ". Para el resto de tu vida.";
+};
+
+ed.value = EXAMPLES.oleada;
+render();
+renderDict();
+showIssues(ComaLint.lintSource(ed.value));
+</script>
+</body>
+</html>

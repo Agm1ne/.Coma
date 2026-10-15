@@ -1,0 +1,320 @@
+| Echo Dungeon: all of Coma in one game |
+| ask, record, list, map, combat, dice, HUD and two endings. |
+
+print "ECHO DUNGEON.".
+print "What is your name, hero?".
+ask the Name.
+print the Name.
+print "Look at the tower clock:".
+print the hour.
+print the date.
+print "You play on".
+print the system.
+print the version.
+print "as".
+print the user.
+print "Standing in:".
+print the pwd.
+print "welcome. The toll costs 5.5 pretend coins.".
+Price equal 5,5.
+print the Price.
+Bard equal list "There are 10 kinds of people: those who understand binary and those who don't." and "Why do programmers confuse Halloween and Christmas? Because OCT 31 equals DEC 25." and "My code works and I don't know why. My code doesn't work and I don't know why." and "A SQL query walks into a bar, sees two tables and asks: mind if I join you?" and "Why did the programmer quit? He didn't get arrays.".
+Joke equal random 5.
+print "The bard says:".
+print Element Joke of Bard.
+
+Playing equal true.
+while the Playing.
+Hero equal record Life 12 and Attack 2 and Gold 0.
+Pack equal list 5 and 0 and 5.
+Remove 0 from the Pack.
+Element 1 of the Pack equal 9.
+print "Breads:".
+print the Length of the Pack.
+print First of the Pack.
+print Last of the Pack.
+print Element 1 of the Pack.
+the Junk equal empty.
+print the Length of the Junk.
+
+record Beast:
+    life 12.
+    attack 2.
+end.
+
+function Strike Base and Dice.
+    return Base plus Dice.
+end.
+check "Strike adds base and dice".
+    Strike 2 and 3 is equal to 5.
+end.
+
+X equal 1.
+Y equal 1.
+DestX equal 1.
+DestY equal 1.
+Goal_x equal 1.
+Goal_y equal 6.
+Coin_x equal 2.
+Coin_y equal 6.
+Has_coin equal false.
+Fighting equal false.
+Points equal 0.
+Steps equal 0.
+Notice equal "Explore.".
+
+print "Guide: WASD or arrows (diagonals work). q quits.".
+print "Goal: reach exit M (1,6). Coin o at (2,6).".
+print "Beast x at (7,5). Traps ^ hurt. Walls stop and cost 1 life.".
+print "Fight: type attack, bread or flee + enter. Bread heals.".
+print "Press a key to enter.".
+while the Key is equal to "".
+    wait 0,1.
+end.
+
+canvas 10 and 8.
+Edge equal 0.
+while the Edge is less than 10.
+    wall Edge and 0.
+    wall Edge and 7.
+    Edge equal Edge plus 1.
+end.
+Side equal 1.
+while the Side is less than 7.
+    wall 0 and Side.
+    wall 9 and Side.
+    Side equal Side plus 1.
+end.
+High equal 1.
+while the High is less than 6.
+    wall 4 and High.
+    High equal High plus 1.
+end.
+wall 5 and 4.
+wall 6 and 4.
+wall 7 and 4.
+wall 8 and 4.
+mark 6 and 2 with "▲".
+mark 3 and 5 with "▲".
+mark 7 and 5 with "☠".
+coin 2 and 6.
+goal 1 and 6.
+clear.
+
+Timer equal 0,0.
+Speed equal 0,18.
+tick 60.
+    Timer equal Timer plus Delta.
+    DestX equal X.
+    DestY equal Y.
+    when the Key "a" or the Key "left".
+        DestX equal DestX minus 1.
+    end.
+    when the Key "d" or the Key "right".
+        DestX equal DestX plus 1.
+    end.
+    when the Key "w" or the Key "up".
+        DestY equal DestY minus 1.
+    end.
+    when the Key "s" or the Key "down".
+        DestY equal DestY plus 1.
+    end.
+    when the Key "q".
+        stop.
+    end.
+    when the DestX is different from the X or the DestY is different from the Y.
+        when the Timer is greater than Speed.
+            Timer equal 0,0.
+            depending on peek DestX and DestY.
+            case "█".
+                the Life of the Hero equal the Life of the Hero minus 1.
+                Notice equal "Wall. Lose 1 life.".
+                when the Life of the Hero is less than 1.
+                    print "Game over. Out of life.".
+                    stop.
+                end.
+            case "▲".
+                X equal DestX.
+                Y equal DestY.
+                Steps equal Steps plus 1.
+                Base equal 5.
+                Half equal Base divided_by 2.
+                the Life of the Hero equal the Life of the Hero minus Half.
+                Notice equal "Trap!".
+                when the Life of the Hero is less than 1.
+                    print "Game over. The trap killed you.".
+                    stop.
+                end.
+            case "☠".
+                clear.
+                X equal DestX.
+                Y equal DestY.
+                Steps equal Steps plus 1.
+                Notice equal "The Beast!".
+                Fighting equal true.
+                while the Fighting.
+                    print "Beast life:".
+                    print the Life of the Beast.
+                    print "Hero life:".
+                    print the Life of the Hero.
+                    print "attack, bread or flee?".
+                    ask the Order.
+                    when the Order is equivalent to "attack" or the Order is equivalent to "a".
+                        Roll equal random 6.
+                        Hit equal Strike Attack of Hero and Roll.
+                        Crit equal Roll bit_and 1.
+                        when Crit is equal to 1.
+                            Hit equal Hit times 2.
+                            print "Critical!".
+                        end.
+                        Left equal the Life of the Beast minus Hit.
+                        put Left in the Life of the Beast.
+                        print "You hit!".
+                        print the Hit.
+                        when the Life of the Beast is less than 1.
+                            print "Beast dead. Loot!".
+                            append 5 to a Pack.
+                            Points equal Points plus 30.
+                            mark DestX and DestY with "".
+                            Fighting equal false.
+                            Notice equal "Loot +30.".
+                        else.
+                            when the Life of the Beast is less than 3.
+                                Bite equal the Attack of the Beast times 2.
+                            else.
+                                Bite equal random the Attack of the Beast.
+                            end.
+                            the Life of the Hero equal the Life of the Hero minus Bite.
+                            print "It bites!".
+                            print the Bite.
+                            wait 1.
+                            when the Life of the Hero is less than 1.
+                                print "Game over. Eaten.".
+                                stop.
+                            end.
+                        end.
+                    else the Order is equivalent to "bread" or the Order is equivalent to "eat".
+                        when the Length of the Pack is equal to 0.
+                            print "No bread.".
+                        else.
+                            Heal equal First of the Pack.
+                            Remove First from the Pack.
+                            the Life of the Hero equal the Life of the Hero plus Heal.
+                            print "Yummy!".
+                        end.
+                    else the Order is equivalent to "flee" or the Order is equivalent to "f".
+                        X equal 1.
+                        Y equal 1.
+                        Fighting equal false.
+                        Notice equal "Fled.".
+                    else.
+                        print "Huh?".
+                        carry_on.
+                    end.
+                end.
+                when the Life of the Hero is less than 1.
+                    print "Game over. Eaten.".
+                    stop.
+                end.
+                clear.
+            otherwise.
+                X equal DestX.
+                Y equal DestY.
+                Steps equal Steps plus 1.
+                when the Life of the Hero is less than 3.
+                    Notice equal "Good. But dying.".
+                else the Life of the Hero is less than 6.
+                    Notice equal "Good. Hurt.".
+                else.
+                    Notice equal "Good.".
+                end.
+        end.
+        when the X is equal to the Coin_x and the Y is equal to the Coin_y.
+            when the Has_coin is equal to false.
+                Has_coin equal true.
+                Points equal Points plus 10.
+                append 5 to a Pack.
+                Notice equal "Coin +10 and bread!".
+            end.
+        end.
+        depending on the Steps.
+            case 0x25.
+                print "37 steps, magic number in hexadecimal.".
+            otherwise.
+        end.
+    end.
+    end.
+    board X and Y and Has_coin.
+    overwrite "@ X ".
+    overwrite X.
+    overwrite " Y ".
+    overwrite Y.
+    overwrite " Pts ".
+    overwrite Points.
+    overwrite " HP ".
+    overwrite the Life of the Hero.
+    overwrite " T ".
+    overwrite Time.
+    overwrite " D ".
+    overwrite Delta.
+    overwrite " | ".
+    overwrite Notice.
+    when the X is equal to the Goal_x and the Y is equal to the Goal_y.
+        when not the Has_coin.
+            print "You escape poor. Normal ending.".
+        else.
+            print "You escape RICH. Good ending.".
+            Points equal Points plus 50.
+        end.
+        print "Leftover loot:".
+        for each Bread in a Pack.
+            print Bread.
+        end.
+        print Points.
+        when the Points are greater than 60.
+            print "Rank S.".
+        else.
+            print "Rank A.".
+        end.
+        print "points.".
+        create "deed.txt".
+        write Name.
+        write Points.
+        close.
+        print "Deed saved in deed.txt.".
+        stop.
+    end.
+end.
+print "Arcane telegraph? (y for yes).".
+ask the Telegraph.
+when the Telegraph is equivalent to "y".
+    connect "official-joke-api.appspot.com" 80.
+    send "GET /random_joke HTTP/1.0".
+    send "Host: official-joke-api.appspot.com".
+    send "".
+    K equal 0.
+    WebLine equal "x".
+    while K is less than 15.
+        receive WebLine.
+        K equal K plus 1.
+        when WebLine is equal to "".
+            stop.
+        end.
+    end.
+    receive NetJoke.
+    print "The ether tells:".
+    print NetJoke.
+    disconnect.
+end.
+print "Again? (y for yes).".
+ask the Again.
+depending on the Again.
+    case "y" and "yes".
+        print "Again!".
+    otherwise.
+        Playing equal false.
+end.
+end.
+print "Bye.".
+print "Press enter to leave.".
+ask the Leave.

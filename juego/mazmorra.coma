@@ -1,0 +1,320 @@
+| Mazmorra del Eco: todo Coma en un juego |
+| pedir, registro, lista, mapa, combate, azar, HUD y dos finales. |
+
+mostrar "MAZMORRA DEL ECO.".
+mostrar "Como te llamas, heroe?".
+pedir el Nombre.
+mostrar el Nombre.
+mostrar "Mira el reloj de la torre:".
+mostrar la Hora.
+mostrar la Fecha.
+mostrar "Juegas en".
+mostrar el Sistema.
+mostrar la Version.
+mostrar "como".
+mostrar el Usuario.
+mostrar "Parado en:".
+mostrar el Directorio.
+mostrar "bienvenido. El peaje cuesta 5,5 monedas de mentira.".
+Precio igual 5,5.
+mostrar el Precio.
+Bardo igual lista "Hay 10 tipos de personas: las que entienden binario y las que no." y "Por que confunden Halloween con Navidad? Porque OCT 31 es igual a DEC 25." y "Mi codigo funciona y no se por que. Mi codigo no funciona y no se por que." y "Un SQL entra a un bar, ve dos tablas y pregunta: les importa si hago un JOIN?" y "Por que dejo el programador? Porque no le llegaban los arrays.".
+Chiste igual azar 5.
+mostrar "El bardo dice:".
+mostrar Elemento Chiste de Bardo.
+
+Jugar igual verdad.
+mientras el Jugar.
+Heroe igual registro Vida 12 y Ataque 2 y Oro 0.
+Mochila igual lista 5 y 0 y 5.
+Quitar 0 de la Mochila.
+Elemento 1 de la Mochila igual 9.
+mostrar "Panes:".
+mostrar la Longitud de la Mochila.
+mostrar Primero de la Mochila.
+mostrar Ultimo de la Mochila.
+mostrar Elemento 1 de la Mochila.
+la Basura igual vacia.
+mostrar la Longitud de la Basura.
+
+registro Bicho:
+    vida 12.
+    ataque 2.
+fin.
+
+funcion Golpe Base y Dado.
+    devolver Base mas Dado.
+fin.
+comprobar "Golpe suma base y dado".
+    Golpe 2 y 3 es_igual_a 5.
+fin.
+
+X igual 1.
+Y igual 1.
+DestX igual 1.
+DestY igual 1.
+Meta_x igual 1.
+Meta_y igual 6.
+Moneda_x igual 2.
+Moneda_y igual 6.
+Tiene_moneda igual falso.
+Luchando igual falso.
+Puntos igual 0.
+Pasos igual 0.
+Aviso igual "Explora.".
+
+mostrar "Guia: WASD o flechas (diagonal vale). q sale.".
+mostrar "Meta: llega a la salida M (1,6). Moneda o en (2,6).".
+mostrar "Bicho x en (7,5). Trampas ^ quitan. Muros paran y quitan 1 vida.".
+mostrar "Pelea: escribe ataca, pan o huye + enter. El pan cura.".
+mostrar "Pulsa una tecla para entrar.".
+mientras la Tecla es igual a "".
+    esperar 0,1.
+fin.
+
+lienzo 10 y 8.
+Borde igual 0.
+mientras el Borde es menor a 10.
+    muro Borde y 0.
+    muro Borde y 7.
+    Borde igual Borde mas 1.
+fin.
+Lado igual 1.
+mientras el Lado es menor a 7.
+    muro 0 y Lado.
+    muro 9 y Lado.
+    Lado igual Lado mas 1.
+fin.
+Alt igual 1.
+mientras el Alt es menor a 6.
+    muro 4 y Alt.
+    Alt igual Alt mas 1.
+fin.
+muro 5 y 4.
+muro 6 y 4.
+muro 7 y 4.
+muro 8 y 4.
+marca 6 y 2 con "▲".
+marca 3 y 5 con "▲".
+marca 7 y 5 con "☠".
+moneda 2 y 6.
+meta 1 y 6.
+limpiar.
+
+Timer igual 0,0.
+Velocidad igual 0,18.
+tick 60.
+    Timer igual Timer mas Delta.
+    DestX igual X.
+    DestY igual Y.
+    de en caso de que la Tecla "a" o la Tecla "izquierda".
+        DestX igual DestX menos 1.
+    fin.
+    de en caso de que la Tecla "d" o la Tecla "derecha".
+        DestX igual DestX mas 1.
+    fin.
+    de en caso de que la Tecla "w" o la Tecla "arriba".
+        DestY igual DestY menos 1.
+    fin.
+    de en caso de que la Tecla "s" o la Tecla "abajo".
+        DestY igual DestY mas 1.
+    fin.
+    de en caso de que la Tecla "q".
+        para.
+    fin.
+    de en caso de que el DestX es distinto a el X o el DestY es distinto a el Y.
+        de en caso de que el Timer es mayor a Velocidad.
+            Timer igual 0,0.
+            segun lee DestX y DestY.
+            caso "█".
+                la Vida de el Heroe igual la Vida del Heroe menos 1.
+                Aviso igual "Muro. Pierdes 1 vida.".
+                de en caso de que la Vida de el Heroe es menor a 1.
+                    mostrar "Fin del juego. Te quedaste sin vida.".
+                    para.
+                fin.
+            caso "▲".
+                X igual DestX.
+                Y igual DestY.
+                Pasos igual Pasos mas 1.
+                Base igual 5.
+                Mitad igual Base entre 2.
+                la Vida de el Heroe igual la Vida del Heroe menos Mitad.
+                Aviso igual "Trampa!".
+                de en caso de que la Vida del Heroe es menor a 1.
+                    mostrar "Fin del juego. La trampa te mato.".
+                    para.
+                fin.
+            caso "☠".
+                limpiar.
+                X igual DestX.
+                Y igual DestY.
+                Pasos igual Pasos mas 1.
+                Aviso igual "El Bicho!".
+                Luchando igual verdad.
+                mientras el Luchando.
+                    mostrar "Vida bicho:".
+                    mostrar la Vida del Bicho.
+                    mostrar "Vida heroe:".
+                    mostrar la Vida del Heroe.
+                    mostrar "ataca, pan o huye?".
+                    pedir la Orden.
+                    de en caso de que la Orden es_equivalente_a "ataca" o la Orden es_equivalente_a "a".
+                        Tiro igual azar 6.
+                        Pego igual Golpe Ataque de Heroe y Tiro.
+                        Critico igual Tiro y_bit 1.
+                        de en caso de que Critico es_igual_a 1.
+                            Pego igual Pego por 2.
+                            mostrar "Critico!".
+                        fin.
+                        Resto igual la Vida del Bicho menos Pego.
+                        Poner el Resto en la Vida del Bicho.
+                        mostrar "Le das!".
+                        mostrar el Pego.
+                        de en caso de que la Vida del Bicho es menor a 1.
+                            mostrar "Bicho muerto. Botin!".
+                            Agregar 5 a la Mochila.
+                            Puntos igual Puntos mas 30.
+                            marca DestX y DestY con "".
+                            Luchando igual falso.
+                            Aviso igual "Botin +30.".
+                        sino.
+                            de en caso de que la Vida del Bicho es menor a 3.
+                                Muerde igual el Ataque del Bicho por 2.
+                            sino.
+                                Muerde igual azar el Ataque del Bicho.
+                            fin.
+                            la Vida de el Heroe igual la Vida del Heroe menos Muerde.
+                            mostrar "Te muerde!".
+                            mostrar el Muerde.
+                            esperar 1.
+                            de en caso de que la Vida de el Heroe es menor a 1.
+                                mostrar "Fin del juego. Te comio.".
+                                para.
+                            fin.
+                        fin.
+                    sino la Orden es_equivalente_a "pan" o la Orden es_equivalente_a "come".
+                        de en caso de que la Longitud de la Mochila es igual a 0.
+                            mostrar "No hay pan.".
+                        sino.
+                            Cura igual Primero de la Mochila.
+                            Quitar Primero de la Mochila.
+                            la Vida de el Heroe igual la Vida del Heroe mas Cura.
+                            mostrar "Rico!".
+                        fin.
+                    sino la Orden es_equivalente_a "huye" o la Orden es_equivalente_a "h".
+                        X igual 1.
+                        Y igual 1.
+                        Luchando igual falso.
+                        Aviso igual "Huiste.".
+                    sino.
+                        mostrar "No entiendo.".
+                        sigue.
+                    fin.
+                fin.
+                de en caso de que la Vida de el Heroe es menor a 1.
+                    mostrar "Fin del juego. Te comio.".
+                    para.
+                fin.
+                limpiar.
+            otro.
+                X igual DestX.
+                Y igual DestY.
+                Pasos igual Pasos mas 1.
+                si la Vida de el Heroe es menor a 3.
+                    Aviso igual "Bien. Pero te mueres.".
+                sino la Vida del Heroe es menor a 6.
+                    Aviso igual "Bien. Herido.".
+                sino.
+                    Aviso igual "Bien.".
+                fin.
+        fin.
+        de en caso de que la X es igual a la Moneda_x y la Y es igual a la Moneda_y.
+            de en caso de que el Tiene_moneda es igual a falso.
+                Tiene_moneda igual verdad.
+                Puntos igual Puntos mas 10.
+                Agregar 5 a la Mochila.
+                Aviso igual "Moneda +10 y pan!".
+            fin.
+        fin.
+        segun los Pasos.
+            caso 0x25.
+                mostrar "37 pasos, numero magico en hexadecimal.".
+            otro.
+        fin.
+    fin.
+    fin.
+    tablero X y Y y Tiene_moneda.
+    pisa "@ X ".
+    pisa X.
+    pisa " Y ".
+    pisa Y.
+    pisa " Pts ".
+    pisa Puntos.
+    pisa " V ".
+    pisa la Vida del Heroe.
+    pisa " T ".
+    pisa Tiempo.
+    pisa " D ".
+    pisa Delta.
+    pisa " | ".
+    pisa Aviso.
+    de en caso de que la X es igual a la Meta_x y la Y es igual a la Meta_y.
+        de en caso de que no el Tiene_moneda.
+            mostrar "Escapas pobre. Final normal.".
+        sino.
+            mostrar "Escapas RICO. Final bueno.".
+            Puntos igual Puntos mas 50.
+        fin.
+        mostrar "Botin restante:".
+        por cada Pan en la Mochila.
+            mostrar Pan.
+        fin.
+        mostrar Puntos.
+        de en caso de que los Puntos es mayor a 60.
+            mostrar "Rango S.".
+        sino.
+            mostrar "Rango A.".
+        fin.
+        mostrar "puntos.".
+        crear "hazana.txt".
+        escribir Nombre.
+        escribir Puntos.
+        cerrar.
+        mostrar "Hazaña guardada en hazana.txt.".
+        para.
+    fin.
+fin.
+mostrar "Telegrafo arcano? (s para si).".
+pedir el Telegrafo.
+de en caso de que el Telegrafo es_equivalente_a "s".
+    conectar "official-joke-api.appspot.com" 80.
+    enviar "GET /random_joke HTTP/1.0".
+    enviar "Host: official-joke-api.appspot.com".
+    enviar "".
+    K igual 0.
+    LineaWeb igual "x".
+    mientras K es menor que 15.
+        recibir LineaWeb.
+        K igual K mas 1.
+        de en caso de que LineaWeb es_igual_a "".
+            para.
+        fin.
+    fin.
+    recibir ChisteRed.
+    mostrar "El eter cuenta:".
+    mostrar ChisteRed.
+    desconectar.
+fin.
+mostrar "Otra vez? (s para si).".
+pedir la Otra.
+segun la Otra.
+    caso "s" y "si".
+        mostrar "De nuevo!".
+    otro.
+        Jugar igual falso.
+fin.
+fin.
+mostrar "Adios.".
+mostrar "Pulsa enter para salir.".
+pedir la Salida.

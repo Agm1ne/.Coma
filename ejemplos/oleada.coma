@@ -1,0 +1,60 @@
+| Oleada 3: turno de los enemigos |
+| Corre una vez por frame |
+
+Jefe1 igual registro Vida 30 y Ataque 5.
+Jefe2 igual registro Vida 50 y Ataque 8.
+Enemigos igual lista Jefe1 y Jefe2.
+Vida_jugador igual 100.
+Pausado igual falso.
+Juego_activo igual verdad.
+Precio_poción igual 3,14.
+Oro igual 25000.
+
+Daño_total igual 0.
+por_cada E en Enemigos.
+    en_caso_de_que Vida de E es_menor_que 1 o Pausado.
+        sigue.
+    fin.
+    Daño_total igual Daño_total más Ataque de E.
+fin.
+Vida_jugador igual Vida_jugador menos Daño_total.
+mostrar "Te quedan.".
+mostrar Vida_jugador.
+
+en_caso_de_que Juego_activo y no Pausado.
+    mostrar "Sigue la oleada.".
+fin.
+
+en_caso_de_que Vida_jugador es_menor_que 1.
+    mostrar "Fin del juego.".
+sino.
+    mostrar "Aguanta.".
+fin.
+
+funcion Suma_daño A y B.
+    devolver A mas B.
+fin.
+Doble igual Suma_daño Daño_total y 10.
+mostrar Doble.
+
+Vida de elemento 1 de Enemigos igual 25.
+mostrar Vida de elemento 1 de Enemigos.
+
+| A igual B igual 5. es error: en dos líneas |
+B igual 5.
+A igual B.
+
+Turno igual 1.
+mientras Turno es_menor_que 4.
+    mostrar Turno.
+    Turno igual Turno mas 1.
+fin.
+
+Objetivo igual 0.
+por_cada E en Enemigos como Caza.
+    en_caso_de_que Vida de E es_mayor_que 0.
+        Objetivo igual E.
+        para Caza.
+    fin.
+fin.
+mostrar "Gracias por jugar.".
