@@ -1,0 +1,10 @@
+Heroe igual registro Vida 100 y Energia 50.
+Bicho igual registro Vida 30 y Energia 10.
+Mochila igual lista "Pocion" y "Espada".
+
+mostrar Elemento 1 de Heroe.
+mostrar Elemento 2 de Heroe.
+mostrar Elemento 1 de Mochila.
+
+Vida_de_Heroe igual Elemento 1 de Heroe.
+mostrar Vida_de_Heroe.

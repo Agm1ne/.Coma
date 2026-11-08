@@ -30,7 +30,6 @@ type
     issues*: seq[Issue]
     inFunction*: bool
     currentFunc*: string
-    recLoops*: seq[(string, string)] # (iterador, lista) de por_cada sobre registros
 
 proc newScope*(parent: Scope = nil): Scope =
   result = Scope(parent: parent, symbols: initTable[string, Symbol]())
@@ -58,8 +57,8 @@ proc tipoHumano*(t: DataTypeKind): string =
   of dtList: "lista"
   of dtListStr: "lista de texto"
   of dtListList: "lista de listas"
-  of dtListRecord: "lista de registros"
   of dtRecord: "registro"
+  of dtHandle: "asa"
   else: "valor"
 
 proc newSemaContext*(): SemaContext =
@@ -68,55 +67,14 @@ proc newSemaContext*(): SemaContext =
   result.issues = @[]
   result.inFunction = false
   result.currentFunc = ""
-  result.recLoops = @[]
-  # Firmas propias (ver ComaBuiltins en parser): existen siempre.
-  discard result.globalScope.declareSym(Symbol(name: "Agmine", kind: skFunc, typ: dtInt,
-                                              intWidth: 32, params: @[], paramTyps: @[]))
 
 proc listKindOf(ctx: SemaContext, n: Node): DataTypeKind =
   ## Clase real de la lista nombrada (dtList por defecto si no se sabe).
   if n != nil and n.kind == nkIdent:
     let (found, sym) = ctx.currentScope.findSym(n.identName)
-    if found and sym.typ in {dtList, dtListStr, dtListList, dtListRecord}:
+    if found and sym.typ in {dtList, dtListStr, dtListList}:
       return sym.typ
   return dtList
-
-proc recFieldList(ctx: SemaContext, target: Node): string =
-  ## Si `Campo de X` es campo de lista de registros, devuelve la lista. "" si no.
-  if target == nil: return ""
-  if target.kind == nkIdent:
-    for i in countdown(ctx.recLoops.high, 0):
-      if ctx.recLoops[i][0] == target.identName:
-        return ctx.recLoops[i][1]
-    return ""
-  if target.kind == nkListAccess:
-    let l = target.left
-    if l != nil and l.kind == nkIdent:
-      let (found, sym) = ctx.currentScope.findSym(l.identName)
-      if found and sym.typ == dtListRecord:
-        return l.identName
-  return ""
-
-proc recordListFields(ctx: SemaContext, lit: Node): seq[string] =
-  ## Esquema (unión en orden) de `lista J1 y J2` o bloque de renglones.
-  result = @[]
-  if lit == nil: return
-  if lit.kind == nkListRecordLit:
-    for row in lit.children:
-      if row != nil and row.kind == nkRecordLit:
-        for f in row.fields:
-          if f.name notin result: result.add(f.name)
-    return
-  for child in lit.children:
-    if child == nil: continue
-    if child.kind == nkRecordLit:
-      for f in child.fields:
-        if f.name notin result: result.add(f.name)
-    elif child.kind == nkIdent:
-      let (found, sym) = ctx.currentScope.findSym(child.identName)
-      if found and sym.typ == dtRecord:
-        for fn in sym.fields:
-          if fn notin result: result.add(fn)
 
 # Primera pasada: Hoisting de firmas (recursivo: valen anidadas como Golpe)
 proc preScanDeclarations*(ctx: var SemaContext, root: Node) =
@@ -131,7 +89,8 @@ proc preScanDeclarations*(ctx: var SemaContext, root: Node) =
     if not ctx.globalScope.declareSym(fnSym):
       ctx.issues.add(Issue(line: root.line, col: root.col, code: "E003", level: eError,
                            msg: "la funcion " & root.funcName & " ya esta declarada", hint: "usa otro nombre"))
-    # OJO: no se baja al cuerpo (las funciones no se anidan, spec 10).
+    # Declarar funciones anidadas tambien (capturas de entorno / closures).
+    preScanDeclarations(ctx, root.thenBlock)
   of nkRecordBlock:
     var fNames: seq[string] = @[]
     for f in root.fields:
@@ -259,6 +218,14 @@ proc inferReturns(ctx: var SemaContext, root: Node) =
   ## Sin devolver: entero (vale el `ret 0` de siempre).
   if root == nil: return
   if root.kind == nkFuncDecl:
+    # Si hay `como <tipo>` declarado, respetarlo en vez de inferir.
+    if root.hasRetTyp:
+      let (ff, fsym) = ctx.globalScope.findSym(root.funcName)
+      if ff and fsym.kind == skFunc:
+        var upd = fsym
+        upd.typ = root.typ
+        ctx.globalScope.symbols[root.funcName] = upd
+      return
     let d = firstDevolver(root.thenBlock)
     if d != nil and d.left != nil:
       let fs = newScope(ctx.globalScope)
@@ -342,7 +309,11 @@ proc analyzeExpr*(ctx: var SemaContext, n: Node): DataTypeKind =
     return dtFloat
 
   of nkAzar:
-    discard ctx.analyzeExpr(n.left)
+    let at = ctx.analyzeExpr(n.left)
+    if at == dtHandle:
+      ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
+                           msg: "azar no acepta asa/nula como maximo",
+                           hint: "pasa un numero entero"))
     n.typ = dtInt
     n.intWidth = 32
     return dtInt
@@ -354,6 +325,11 @@ proc analyzeExpr*(ctx: var SemaContext, n: Node): DataTypeKind =
     return dtString
 
   of nkIdent:
+    # 'nula' / 'null' / 'nil' / 'none' = asa nulo (FFI). No se declara como variable.
+    if n.identName == "nula":
+      n.typ = dtHandle
+      n.intWidth = 0
+      return dtHandle
     let (found, sym) = ctx.currentScope.findSym(n.identName)
     if found:
       n.typ = sym.typ
@@ -372,12 +348,17 @@ proc analyzeExpr*(ctx: var SemaContext, n: Node): DataTypeKind =
     let tLeft = ctx.analyzeExpr(n.left)
     let tRight = ctx.analyzeExpr(n.right)
     if n.strVal in ["mas", "menos", "por", "entre"] and
-       (tLeft == dtString or tRight == dtString):
+       (tLeft == dtString or tRight == dtString or tLeft == dtHandle or tRight == dtHandle):
+      let badT = if tLeft == dtHandle: dtHandle elif tRight == dtHandle: dtHandle else: dtString
       ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
-                           msg: "aritmetica con texto no existe (usa mostrar para juntar)",
-                           hint: "convierte a numero o trabaja el texto aparte"))
+                           msg: "aritmetica con " & tipoHumano(badT) & " no existe",
+                           hint: "usa numeros o textos, no asas/nulas"))
 
     if n.strVal in ["es_igual_a", "igual", "es_equivalente_a", "es_mayor_que", "es_menor_que", "es_distinto_de", "es_mayor_o_igual", "es_menor_o_igual", "y", "o"]:
+      if tLeft == dtHandle or tRight == dtHandle:
+        ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
+                             msg: "no se puede comparar asa/nula",
+                             hint: "compara enteros, decimales o textos"))
       n.typ = dtBool
       n.intWidth = 8
       return dtBool
@@ -398,6 +379,10 @@ proc analyzeExpr*(ctx: var SemaContext, n: Node): DataTypeKind =
 
   of nkUnaryOp:
     let subT = ctx.analyzeExpr(n.left)
+    if n.strVal == "menos" and subT == dtHandle:
+      ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
+                           msg: "menos unario no acepta asa/nula",
+                           hint: "usa un numero"))
     if n.strVal == "no":
       n.typ = dtBool
       n.intWidth = 8
@@ -441,27 +426,6 @@ proc analyzeExpr*(ctx: var SemaContext, n: Node): DataTypeKind =
     n.intWidth = 32
     return fsym.typ
 
-  of nkListRecordLit:
-    # Bloque `G igual lista de registros:` + renglones `registro ...`.
-    var okRec = n.children.len > 0
-    for row in n.children:
-      if row == nil or row.kind != nkRecordLit:
-        okRec = false
-        break
-      for f in row.fields:
-        let ft = ctx.analyzeExpr(f.val)
-        if ft notin {dtInt, dtBool, dtUnknown}:
-          ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
-                               msg: "campos de texto aun no en listas de registros",
-                               hint: "deja los campos en enteros"))
-          okRec = false
-          break
-    if okRec:
-      n.typ = dtListRecord
-      return dtListRecord
-    n.typ = dtList
-    return dtList
-
   of nkListLit:
     if n.children.len == 0:
       # `vacia` no decide clase: la manda el primer uso (Agregar la adopta).
@@ -471,22 +435,20 @@ proc analyzeExpr*(ctx: var SemaContext, n: Node): DataTypeKind =
     var nNum = 0
     var nLista = 0
     var nListaTexto = 0
-    var nRec = 0
     for child in n.children:
       let t = ctx.analyzeExpr(child)
-      if t == dtString: inc nTexto
+      if t == dtHandle:
+        ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
+                             msg: "no se puede poner asa/nula en una lista",
+                             hint: "usa enteros, decimales o textos"))
+      elif t == dtString: inc nTexto
       elif t in {dtInt, dtFloat, dtBool}: inc nNum
       elif t == dtList: inc nLista
       elif t == dtListStr: inc nListaTexto
-      elif t == dtRecord: inc nRec
     if nListaTexto > 0:
       ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
                            msg: "listas de texto aun no se anidan",
                            hint: "anida listas de enteros o usa registros"))
-    elif nRec > 0 and (nTexto + nNum + nLista + nListaTexto) > 0:
-      ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
-                           msg: "no mezcles registros con otra cosa",
-                           hint: "una fila de registros por elemento"))
     elif nTexto > 0 and (nNum + nLista) > 0:
       ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
                            msg: "no mezcles texto con numeros en la misma lista",
@@ -495,24 +457,10 @@ proc analyzeExpr*(ctx: var SemaContext, n: Node): DataTypeKind =
       ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
                            msg: "no mezcles listas con numeros sueltos",
                            hint: "una fila por elemento: lista de listas"))
-    if nRec > 0 and nTexto == 0 and nNum == 0 and nLista == 0 and nListaTexto == 0:
-      # Campos no enteros en filas: E202 honesto (las filas son de enteros).
-      for child in n.children:
-        let t = ctx.analyzeExpr(child)
-        if t == dtRecord and child.kind == nkRecordLit:
-          for f in child.fields:
-            let ft = ctx.analyzeExpr(f.val)
-            if ft notin {dtInt, dtBool, dtUnknown}:
-              ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
-                                   msg: "campos de texto aun no en listas de registros",
-                                   hint: "deja los campos en enteros"))
-              break
-      n.typ = dtListRecord
-      return dtListRecord
-    if nTexto > 0 and nNum == 0 and nLista == 0 and nListaTexto == 0 and nRec == 0:
+    if nTexto > 0 and nNum == 0 and nLista == 0 and nListaTexto == 0:
       n.typ = dtListStr
       return dtListStr
-    if nLista > 0 and nTexto == 0 and nNum == 0 and nListaTexto == 0 and nRec == 0:
+    if nLista > 0 and nTexto == 0 and nNum == 0 and nListaTexto == 0:
       n.typ = dtListList
       return dtListList
     n.typ = dtList
@@ -525,7 +473,11 @@ proc analyzeExpr*(ctx: var SemaContext, n: Node): DataTypeKind =
     return dtRecord
 
   of nkListAccess:
-    discard ctx.analyzeExpr(n.left)
+    let lalt = ctx.analyzeExpr(n.left)
+    if lalt == dtHandle:
+      ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
+                           msg: "no se puede indexar una asa/nula",
+                           hint: "indexa una lista"))
     if n.right != nil:
       discard ctx.analyzeExpr(n.right)
     if n.strVal == "longitud":
@@ -550,10 +502,6 @@ proc analyzeExpr*(ctx: var SemaContext, n: Node): DataTypeKind =
     if ctx.listKindOf(n.left) == dtListList:
       n.typ = dtList
       return dtList
-    if ctx.listKindOf(n.left) == dtListRecord:
-      # Renglón de lista de registros (solo vive dentro de Campo de ...).
-      n.typ = dtRecord
-      return dtRecord
     n.typ = dtInt
     n.intWidth = 32
     return dtInt
@@ -561,20 +509,96 @@ proc analyzeExpr*(ctx: var SemaContext, n: Node): DataTypeKind =
   of nkFieldAccess:
     # dtUnknown a propósito: el tipo real lo sabe codegen (primera escritura).
     # Así `X igual Nombre_de_J` adopta texto en vez de truncar un puntero.
-    discard ctx.analyzeExpr(n.left)
-    let rl = ctx.recFieldList(n.left)
-    if rl != "":
-      let (rfound, rsym) = ctx.currentScope.findSym(rl)
-      if rfound and rsym.typ == dtListRecord and n.strVal notin rsym.fields:
-        ctx.issues.add(Issue(line: n.line, col: n.col, code: "E005", level: eError,
-                             msg: "el campo " & n.strVal & " no existe en la lista",
-                             hint: "campos: " & rsym.fields.join(", ")))
+    let lt = ctx.analyzeExpr(n.left)
+    if lt == dtHandle:
+      ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
+                           msg: "no se puede leer campo de una asa/nula",
+                           hint: "usa un registro o variable normal"))
     n.typ = dtUnknown
     n.intWidth = 0
     return dtUnknown
 
   else:
     return dtVoid
+
+proc collectFreeVars(ctx: var SemaContext, body: Node, params: seq[string],
+                     defined: var Table[string, bool], result: var Table[string, bool]) =
+  ## Recolecta identificadores usados en `body` que no son parámetros,
+  ## no se declaran en el cuerpo, no son globales ni nombres de función.
+  ## Esos son candidatos a captura del entorno (closure).
+  if body == nil: return
+  case body.kind
+  of nkIdent:
+    if not params.contains(body.identName) and not defined.hasKey(body.identName):
+      let (gfound, gsym) = ctx.globalScope.findSym(body.identName)
+      if not gfound or gsym.kind != skFunc:
+        result[body.identName] = true
+  of nkAssign:
+    defined[body.identName] = true
+    collectFreeVars(ctx, body.left, params, defined, result)
+  of nkForEach:
+    defined[body.identName] = true
+    collectFreeVars(ctx, body.left, params, defined, result)
+    collectFreeVars(ctx, body.thenBlock, params, defined, result)
+  of nkPedir, nkLeerLinea:
+    defined[body.identName] = true
+  of nkRed:
+    if body.strVal == "recibir": defined[body.identName] = true
+    collectFreeVars(ctx, body.left, params, defined, result)
+    collectFreeVars(ctx, body.right, params, defined, result)
+  of nkFieldAssign:
+    collectFreeVars(ctx, body.left, params, defined, result)
+    collectFreeVars(ctx, body.right, params, defined, result)
+  of nkListAssign:
+    collectFreeVars(ctx, body.left, params, defined, result)
+    collectFreeVars(ctx, body.right, params, defined, result)
+    collectFreeVars(ctx, body.target, params, defined, result)
+  of nkMostrar:
+    for it in body.children: collectFreeVars(ctx, it, params, defined, result)
+  of nkEscribir:
+    collectFreeVars(ctx, body.left, params, defined, result)
+  of nkPisa:
+    collectFreeVars(ctx, body.left, params, defined, result)
+  of nkIf:
+    collectFreeVars(ctx, body.cond, params, defined, result)
+    collectFreeVars(ctx, body.thenBlock, params, defined, result)
+    if body.elseBlock != nil and body.elseBlock.kind in {nkBlock, nkIf}:
+      collectFreeVars(ctx, body.elseBlock, params, defined, result)
+  of nkWhile, nkTick:
+    collectFreeVars(ctx, body.cond, params, defined, result)
+    collectFreeVars(ctx, body.thenBlock, params, defined, result)
+  of nkMatch:
+    collectFreeVars(ctx, body.cond, params, defined, result)
+    for br in body.children: collectFreeVars(ctx, br.thenBlock, params, defined, result)
+    if body.elseBlock != nil: collectFreeVars(ctx, body.elseBlock, params, defined, result)
+  of nkBlock, nkComprobar:
+    for s in body.children: collectFreeVars(ctx, s, params, defined, result)
+  of nkExprStmt:
+    collectFreeVars(ctx, body.left, params, defined, result)
+  of nkDevolver:
+    collectFreeVars(ctx, body.left, params, defined, result)
+  of nkCall:
+    for a in body.args: collectFreeVars(ctx, a, params, defined, result)
+  of nkFieldAccess:
+    collectFreeVars(ctx, body.left, params, defined, result)
+  of nkListAccess:
+    collectFreeVars(ctx, body.left, params, defined, result)
+    collectFreeVars(ctx, body.right, params, defined, result)
+  of nkListLit:
+    for ch in body.children: collectFreeVars(ctx, ch, params, defined, result)
+  of nkRecordLit:
+    for f in body.fields: collectFreeVars(ctx, f.val, params, defined, result)
+  of nkUnaryOp:
+    collectFreeVars(ctx, body.left, params, defined, result)
+  of nkBinaryOp:
+    collectFreeVars(ctx, body.left, params, defined, result)
+    collectFreeVars(ctx, body.right, params, defined, result)
+  of nkAzar:
+    collectFreeVars(ctx, body.left, params, defined, result)
+  of nkLeeCasilla:
+    collectFreeVars(ctx, body.left, params, defined, result)
+    collectFreeVars(ctx, body.right, params, defined, result)
+  else: discard
 
 # Análisis de sentencias y bloques
 proc analyzeStmt*(ctx: var SemaContext, n: Node) =
@@ -583,91 +607,43 @@ proc analyzeStmt*(ctx: var SemaContext, n: Node) =
   case n.kind
   of nkAssign:
     let t = ctx.analyzeExpr(n.left)
-    # El renglón suelto no se asigna (E201 honesto): se lee campo por campo.
-    if n.left != nil and n.left.kind == nkListAccess and t == dtRecord:
-      let ll = n.left.left
-      if ll != nil and ll.kind == nkIdent:
-        let (ffound, fsym) = ctx.currentScope.findSym(ll.identName)
-        if ffound and fsym.typ == dtListRecord:
-          ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
-                               msg: "el renglon suelto no se asigna entero",
-                               hint: "lee campo por campo: Vida de elemento 1 de G."))
-          return
     # Fase 1: las locales ya son tipadas (entero/decimal/texto caben en alloca).
-    # Las listas de registros son entidades globales como los registros.
-    let toGlobal = t == dtListRecord
     let (found, sym) = ctx.currentScope.findSym(n.identName)
     if not found:
-      let sk = if toGlobal: skGlobalVar
-               elif ctx.inFunction: skLocalVar else: skGlobalVar
+      # 'nula' solo puede ir en una variable de asa (puntero).
+      if t == dtHandle:
+        ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
+                             msg: "no puedes asignar nula a una variable comun",
+                             hint: "declara la variable con 'puntero' o usa otro tipo"))
+      let sk = if ctx.inFunction: skLocalVar else: skGlobalVar
       var newSym = Symbol(name: n.identName, kind: sk, typ: t, intWidth: max(32, n.left.intWidth))
       if t == dtRecord and n.left.kind == nkRecordLit:
         var fNames: seq[string] = @[]
         for f in n.left.fields:
           fNames.add(f.name)
         newSym.fields = fNames
-      if t == dtListRecord and (n.left.kind == nkListLit or n.left.kind == nkListRecordLit):
-        newSym.fields = ctx.recordListFields(n.left)
-      elif t == dtListRecord and n.left.kind == nkIdent:
-        let (sfound, ssym) = ctx.currentScope.findSym(n.left.identName)
-        if sfound and ssym.typ == dtListRecord:
-          newSym.fields = ssym.fields
-      if toGlobal:
-        discard ctx.globalScope.declareSym(newSym)
-      else:
-        discard ctx.currentScope.declareSym(newSym)
+      discard ctx.currentScope.declareSym(newSym)
     else:
-      # Actualizar tipo si era desconocido (las listas de registros migran
-      # a global: nunca viven en ámbito de función).
+      # Actualizar tipo si era desconocido
       if sym.typ == dtUnknown:
-        if t == dtListRecord:
-          let (gfound, gsym) = ctx.globalScope.findSym(n.identName)
-          if gfound and gsym.typ notin {dtUnknown, dtListRecord}:
-            ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
-                                 msg: n.identName & " era " & tipoHumano(gsym.typ) & " y le das " & tipoHumano(t),
-                                 hint: "usa otra variable o convierte antes"))
-            return
-          ctx.currentScope.symbols.del(n.identName)
-          var moved = sym
-          moved.typ = t
-          moved.kind = skGlobalVar
-          if n.left.kind == nkListLit or n.left.kind == nkListRecordLit:
-            moved.fields = ctx.recordListFields(n.left)
-          elif n.left.kind == nkIdent:
-            let (sfound, ssym) = ctx.currentScope.findSym(n.left.identName)
-            if sfound and ssym.typ == dtListRecord:
-              moved.fields = ssym.fields
-          if gfound:
-            ctx.globalScope.symbols[n.identName] = moved
-          else:
-            discard ctx.globalScope.declareSym(moved)
-        else:
-          var updated = sym
-          updated.typ = t
-          ctx.currentScope.symbols[n.identName] = updated
-      elif sym.typ == dtListRecord and t == dtListRecord:
-        if n.left.kind == nkListLit or n.left.kind == nkListRecordLit:
-          var updated = sym
-          updated.fields = ctx.recordListFields(n.left)
-          ctx.globalScope.symbols[n.identName] = updated
-        elif n.left.kind == nkIdent:
-          let (sfound, ssym) = ctx.currentScope.findSym(n.left.identName)
-          if sfound and ssym.typ == dtListRecord:
-            var updated = sym
-            updated.fields = ssym.fields
-            ctx.globalScope.symbols[n.identName] = updated
+        var updated = sym
+        updated.typ = t
+        ctx.currentScope.symbols[n.identName] = updated
       else:
         # Cambio de tipo decidido (era ABIERTO): lo numérico mezcla en
         # silencio; lo demás es E202 honesto en vez de IR roto.
         let numA = sym.typ in {dtInt, dtFloat, dtBool}
         let numB = t in {dtInt, dtFloat, dtBool}
-        let contA = sym.typ in {dtList, dtListStr, dtListList, dtListRecord, dtRecord}
-        let contB = t in {dtList, dtListStr, dtListList, dtListRecord, dtRecord}
+        let contA = sym.typ in {dtList, dtListStr, dtListList, dtRecord}
+        let contB = t in {dtList, dtListStr, dtListList, dtRecord}
+        let isHandleA = sym.typ == dtHandle
+        let isHandleB = t == dtHandle
         let clash = (numA != numB) or
-                    (contA and t notin {dtList, dtListStr, dtListList, dtListRecord, dtRecord, dtUnknown, dtVoid} and sym.typ != t) or
-                    (contB and sym.typ notin {dtList, dtListStr, dtListList, dtListRecord, dtRecord} and sym.typ != t) or
+                    (contA and t notin {dtList, dtListStr, dtListList, dtRecord, dtUnknown, dtVoid} and sym.typ != t) or
+                    (contB and sym.typ notin {dtList, dtListStr, dtListList, dtRecord} and sym.typ != t) or
                     (contA and contB and sym.typ != t) or
-                    (t == dtVoid)
+                    (t == dtVoid) or
+                    (isHandleA != isHandleB)
         if clash:
           ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
                                msg: n.identName & " era " & tipoHumano(sym.typ) & " y le das " & tipoHumano(t),
@@ -675,19 +651,7 @@ proc analyzeStmt*(ctx: var SemaContext, n: Node) =
 
   of nkFieldAssign:
     discard ctx.analyzeExpr(n.left)
-    let tr = ctx.analyzeExpr(n.right)
-    let rl = ctx.recFieldList(n.left)
-    if rl != "":
-      let (rfound, rsym) = ctx.currentScope.findSym(rl)
-      if rfound and rsym.typ == dtListRecord:
-        if n.strVal notin rsym.fields:
-          ctx.issues.add(Issue(line: n.line, col: n.col, code: "E005", level: eError,
-                               msg: "el campo " & n.strVal & " no existe en la lista",
-                               hint: "campos: " & rsym.fields.join(", ")))
-        elif tr in {dtString, dtFloat}:
-          ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
-                               msg: "los campos de lista de registros son enteros",
-                               hint: "guarda el texto en un registro suelto"))
+    discard ctx.analyzeExpr(n.right)
 
   of nkListAssign:
     discard ctx.analyzeExpr(n.left)
@@ -695,11 +659,7 @@ proc analyzeStmt*(ctx: var SemaContext, n: Node) =
       discard ctx.analyzeExpr(n.right)
     let tv = ctx.analyzeExpr(n.target)
     let lk = ctx.listKindOf(n.left)
-    if lk == dtListRecord:
-      ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
-                           msg: "las filas no se reemplazan enteras",
-                           hint: "escribe campo por campo: Vida de elemento 1 de G igual 99."))
-    elif (lk == dtListStr and tv in {dtInt, dtFloat, dtBool}) or
+    if (lk == dtListStr and tv in {dtInt, dtFloat, dtBool}) or
        (lk == dtList and tv in {dtString, dtList, dtListStr, dtListList, dtRecord}) or
        (lk == dtListList and tv != dtList and tv != dtUnknown):
       ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
@@ -708,22 +668,18 @@ proc analyzeStmt*(ctx: var SemaContext, n: Node) =
 
   of nkMostrar:
     for item in n.children:
-      let t = ctx.analyzeExpr(item)
-      if t == dtListRecord:
+      let it = ctx.analyzeExpr(item)
+      if it == dtHandle:
         ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
-                             msg: "las listas de registros se muestran campo por campo",
-                             hint: "muestra Vida de elemento 1 de G."))
-      elif t == dtRecord and item.kind == nkListAccess:
-        ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
-                             msg: "el renglon suelto no se muestra entero",
-                             hint: "muestra campo por campo: Vida de elemento 1 de G."))
+                             msg: "mostrar no acepta asa/nula",
+                             hint: "muestra entero, decimal o texto"))
 
   of nkPedir:
     let (found, fsym) = ctx.currentScope.findSym(n.identName)
     if not found:
       let newSym = Symbol(name: n.identName, kind: skGlobalVar, typ: dtString)
       discard ctx.currentScope.declareSym(newSym)
-    elif fsym.typ in {dtList, dtListStr, dtListList, dtListRecord, dtRecord}:
+    elif fsym.typ in {dtList, dtListStr, dtListList, dtRecord, dtHandle}:
       ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
                            msg: "pedir no cabe en " & tipoHumano(fsym.typ),
                            hint: "pide a un entero, decimal o texto"))
@@ -734,14 +690,14 @@ proc analyzeStmt*(ctx: var SemaContext, n: Node) =
     if not lfound:
       let newSym = Symbol(name: n.identName, kind: skGlobalVar, typ: dtString)
       discard ctx.currentScope.declareSym(newSym)
-    elif lfsym.typ in {dtList, dtListStr, dtListList, dtListRecord, dtRecord}:
+    elif lfsym.typ in {dtList, dtListStr, dtListList, dtRecord, dtHandle}:
       ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
                            msg: "leer no cabe en " & tipoHumano(lfsym.typ),
                            hint: "lee a un texto"))
 
   of nkEscribir:
     let t = ctx.analyzeExpr(n.left)
-    if t in {dtList, dtListStr, dtListList, dtListRecord, dtRecord}:
+    if t in {dtList, dtListStr, dtListList, dtRecord, dtHandle}:
       ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
                            msg: "escribir " & tipoHumano(t) & " no existe aún",
                            hint: "escribe entero, decimal o texto"))
@@ -767,7 +723,7 @@ proc analyzeStmt*(ctx: var SemaContext, n: Node) =
     elif n.strVal == "enviar":
       if n.left != nil:
         let t = ctx.analyzeExpr(n.left)
-        if t in {dtList, dtListStr, dtListList, dtListRecord, dtRecord}:
+        if t in {dtList, dtListStr, dtListList, dtRecord, dtHandle}:
           ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
                                msg: "enviar " & tipoHumano(t) & " no existe aún",
                                hint: "envia entero, decimal o texto"))
@@ -776,29 +732,45 @@ proc analyzeStmt*(ctx: var SemaContext, n: Node) =
       if not found:
         let newSym = Symbol(name: n.identName, kind: skGlobalVar, typ: dtString)
         discard ctx.currentScope.declareSym(newSym)
-      elif fsym.typ in {dtList, dtListStr, dtListList, dtListRecord, dtRecord}:
+      elif fsym.typ in {dtList, dtListStr, dtListList, dtRecord, dtHandle}:
         ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
                              msg: "recibir no cabe en " & tipoHumano(fsym.typ),
                              hint: "recibe a un texto"))
 
   of nkPisa:
-    discard ctx.analyzeExpr(n.left)
+    let pt = ctx.analyzeExpr(n.left)
+    if pt == dtHandle:
+      ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
+                           msg: "pisa no acepta asa/nula",
+                           hint: "pisa un entero, decimal o texto"))
 
   of nkIf:
-    discard ctx.analyzeExpr(n.cond)
+    let ct = ctx.analyzeExpr(n.cond)
+    if ct == dtHandle:
+      ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
+                           msg: "condicion no acepta asa/nula",
+                           hint: "usa una comparacion o booleano"))
     ctx.analyzeStmt(n.thenBlock)
     if n.elseBlock != nil:
       ctx.analyzeStmt(n.elseBlock)
 
   of nkWhile:
-    discard ctx.analyzeExpr(n.cond)
+    let wt = ctx.analyzeExpr(n.cond)
+    if wt == dtHandle:
+      ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
+                           msg: "condicion no acepta asa/nula",
+                           hint: "usa una comparacion o booleano"))
     ctx.analyzeStmt(n.thenBlock)
 
   of nkTick:
     ctx.analyzeStmt(n.thenBlock)
 
   of nkMatch:
-    discard ctx.analyzeExpr(n.cond)
+    let mt = ctx.analyzeExpr(n.cond)
+    if mt == dtHandle:
+      ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
+                           msg: "según no acepta asa/nula",
+                           hint: "usa un entero o texto"))
     for branch in n.children:
       for val in branch.children:
         discard ctx.analyzeExpr(val)
@@ -807,9 +779,12 @@ proc analyzeStmt*(ctx: var SemaContext, n: Node) =
       ctx.analyzeStmt(n.elseBlock)
 
   of nkForEach:
-    discard ctx.analyzeExpr(n.left)
+    let flt = ctx.analyzeExpr(n.left)
+    if flt == dtHandle:
+      ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
+                           msg: "no se puede recorrer una asa/nula",
+                           hint: "recorre una lista"))
     let lkf = ctx.listKindOf(n.left)
-    # Sobre lista de registros el iterador es la POSICIÓN (entero, v0.4).
     let iterTyp = if lkf == dtListStr: dtString elif lkf == dtListList: dtList else: dtInt
     let (ifound, isym) = ctx.currentScope.findSym(n.identName)
     if not ifound:
@@ -822,22 +797,38 @@ proc analyzeStmt*(ctx: var SemaContext, n: Node) =
       ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
                            msg: n.identName & " ya existe con otra clase, usa otro nombre para recorrer",
                            hint: "el que recorre adopta la clase de la lista"))
-    # Sobre registros el iterador es posición: se recuerda (iterador, lista).
-    if lkf == dtListRecord and n.left != nil and n.left.kind == nkIdent:
-      ctx.recLoops.add((n.identName, n.left.identName))
-      ctx.analyzeStmt(n.thenBlock)
-      discard ctx.recLoops.pop()
-    else:
-      ctx.analyzeStmt(n.thenBlock)
-    return
 
   of nkFuncDecl:
     let oldFn = ctx.currentFunc
     let oldInFn = ctx.inFunction
     ctx.currentFunc = n.funcName
     ctx.inFunction = true
-    let funcScope = newScope(ctx.globalScope)
+    # Scope de la hija con el scope actual (padre) como padre, para capturar entorno.
+    let funcScope = newScope(ctx.currentScope)
     ctx.currentScope = funcScope
+    # Recolectar variables libres del cuerpo (candidatas a captura del padre).
+    var freeVars = initTable[string, bool]()
+    var defined = initTable[string, bool]()
+    collectFreeVars(ctx, n.thenBlock, n.params, defined, freeVars)
+    var capVars: seq[string] = @[]
+    var capTyps: seq[DataTypeKind] = @[]
+    for vn in freeVars.keys:
+      var vt = dtInt
+      if ctx.currentScope.parent != nil and ctx.currentScope.parent.symbols.hasKey(vn):
+        vt = ctx.currentScope.parent.symbols[vn].typ
+      elif ctx.globalScope.symbols.hasKey(vn):
+        vt = ctx.globalScope.symbols[vn].typ
+      # Tipos no capturables en v1: lista, registro, asa.
+      if vt in {dtList, dtListStr, dtListList, dtRecord, dtListRecord, dtHandle}:
+        ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
+                             msg: "no se puede capturar " & tipoHumano(vt) & " en cierre",
+                             hint: "captura solo entero, decimal o texto"))
+        continue
+      capVars.add(vn)
+      capTyps.add(vt)
+      discard funcScope.declareSym(Symbol(name: vn, kind: skLocalVar, typ: vt, intWidth: 32))
+    n.capturedVars = capVars
+    n.capturedTyps = capTyps
     for i, p in n.params:
       let pt = if i < n.paramTyps.len: n.paramTyps[i] else: dtInt
       if pt == dtRecord:
@@ -864,13 +855,19 @@ proc analyzeStmt*(ctx: var SemaContext, n: Node) =
       ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
                            msg: "devolver " & tipoHumano(t) & " no cabe en v1",
                            hint: "devuelve entero, decimal o texto"))
+    elif t == dtHandle:
+      ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
+                           msg: "devolver asa/nula no existe en v1",
+                           hint: "devuelve entero, decimal o texto"))
     elif ctx.inFunction:
       let (ffound, fsym) = ctx.globalScope.findSym(ctx.currentFunc)
       if ffound and fsym.kind == skFunc:
         let want = fsym.typ
         let clash = (want == dtString and t != dtString) or
                     (want != dtString and t == dtString) or
-                    (want in {dtList, dtListStr, dtListList} and t != want)
+                    (want in {dtList, dtListStr, dtListList} and t != want) or
+                    (want == dtHandle and t != dtHandle) or
+                    (t == dtHandle and want != dtHandle)
         if clash:
           ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
                                msg: "esta funcion devuelve " & tipoHumano(want) & " y le das " & tipoHumano(t),
@@ -895,6 +892,10 @@ proc analyzeStmt*(ctx: var SemaContext, n: Node) =
   of nkListAdd, nkListRemove:
     discard ctx.analyzeExpr(n.left)
     let rv = ctx.analyzeExpr(n.right)
+    if rv == dtHandle:
+      ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
+                           msg: "no puedes agregar asa/nula a una lista",
+                           hint: "agrega enteros, decimales o textos"))
     # Quitar por posición (primero/ultimo/elemento) no trae valor: solo índice.
     if n.kind == nkListAdd or n.strVal notin ["primero", "ultimo", "elemento"]:
       # `vacia` adopta la clase del primer valor agregado (fuera de funciones;
@@ -911,11 +912,7 @@ proc analyzeStmt*(ctx: var SemaContext, n: Node) =
           upd.typ = if rv == dtString: dtListStr else: dtList
           ctx.currentScope.symbols[n.left.identName] = upd
       let lk2 = ctx.listKindOf(n.left)
-      if lk2 == dtListRecord:
-        ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
-                             msg: "en listas de registros no se agrega ni se quita",
-                             hint: "se construyen de una vez: G igual lista J1 y J2."))
-      elif lk2 == dtListStr and rv in {dtInt, dtFloat, dtBool}:
+      if lk2 == dtListStr and rv in {dtInt, dtFloat, dtBool}:
         ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
                              msg: "ese valor no cabe en lista de texto",
                              hint: "a lista de texto, texto entre comillas"))
@@ -936,8 +933,31 @@ proc analyzeStmt*(ctx: var SemaContext, n: Node) =
                                hint: "a lista de enteros, numeros"))
 
   of nkPointerDecl:
-    let ptrSym = Symbol(name: n.identName, kind: skPointer, targetVar: n.strVal)
+    let ptrSym = Symbol(name: n.identName, kind: skPointer, typ: dtHandle, targetVar: n.strVal)
     discard ctx.currentScope.declareSym(ptrSym)
+
+  of nkDireccion:
+    # direccion de X: solo vale si X es una funcion o puntero declarado.
+    let (dfound, dsym) = ctx.currentScope.findSym(n.identName)
+    if not dfound:
+      let (gfound, gsym) = ctx.globalScope.findSym(n.identName)
+      if gfound and gsym.kind == skFunc:
+        # direccion de una funcion: OK (asa opaca).
+        discard
+      elif gfound and gsym.kind == skPointer:
+        # direccion de un puntero: OK.
+        discard
+      else:
+        ctx.issues.add(Issue(line: n.line, col: n.col, code: "E003", level: eError,
+                             msg: "direccion de '" & n.identName & "' desconocida",
+                             hint: "declara primero la funcion o el puntero"))
+    elif dsym.kind == skPointer:
+      # direccion de un puntero local: OK.
+      discard
+    else:
+      ctx.issues.add(Issue(line: n.line, col: n.col, code: "E202", level: eError,
+                           msg: "no se puede tomar direccion de '" & n.identName & "' (no es puntero ni funcion)",
+                           hint: "usa un puntero o una funcion"))
 
   of nkCall:
     # Llamada suelta: se analiza igual (aridad, tipos) y se descarta el retorno.

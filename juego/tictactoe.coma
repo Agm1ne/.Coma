@@ -1,0 +1,302 @@
+| Tic-Tac-Toe en .Coma con ventana 2D real |
+
+servicio ventana 480 y 520 y "Tic Tac Toe - Coma" como V.
+
+funcion externa SndBeep Freq como entero y Dur como entero como entero alias "snd_beep" usando cdecl.
+funcion externa VentanaRatonX como entero alias "coma_ventana_raton_x" usando cdecl.
+funcion externa VentanaRatonY como entero alias "coma_ventana_raton_y" usando cdecl.
+funcion externa VentanaBotonIzq como entero alias "coma_ventana_boton_izq" usando cdecl.
+funcion externa VentanaTecla VK como entero como entero alias "coma_ventana_tecla" usando cdecl.
+
+Grid igual lista 0 y 0 y 0 y 0 y 0 y 0 y 0 y 0 y 0.
+Turno igual 1.
+Jugando igual verdad.
+Ganador igual 0.
+ModoIA igual verdad.
+ClickProcesado igual falso.
+
+funcion Indice Fila como entero y Col como entero.
+    devolver Fila por 3 mas Col.
+fin.
+
+funcion Celda Fila como entero y Col como entero.
+    I igual Indice Fila y Col.
+    I1 igual I mas 1.
+    devolver Elemento I1 de Grid.
+fin.
+
+funcion Colocar Fila como entero y Col como entero y Valor como entero.
+    I igual Indice Fila y Col.
+    I1 igual I mas 1.
+    Elemento I1 de Grid igual Valor.
+fin.
+
+funcion HayGanador.
+    F igual 0.
+    mientras F es_menor_que 3.
+        A igual Celda F y 0.
+        B igual Celda F y 1.
+        C igual Celda F y 2.
+        en_caso_de_que A es_distinto_de 0.
+            en_caso_de_que A es_igual_a B.
+                en_caso_de_que B es_igual_a C.
+                    devolver A.
+                fin.
+            fin.
+        fin.
+        F igual F mas 1.
+    fin.
+    Col igual 0.
+    mientras Col es_menor_que 3.
+        A igual Celda 0 y Col.
+        B igual Celda 1 y Col.
+        C igual Celda 2 y Col.
+        en_caso_de_que A es_distinto_de 0.
+            en_caso_de_que A es_igual_a B.
+                en_caso_de_que B es_igual_a C.
+                    devolver A.
+                fin.
+            fin.
+        fin.
+        Col igual Col mas 1.
+    fin.
+    A igual Celda 0 y 0.
+    B igual Celda 1 y 1.
+    C igual Celda 2 y 2.
+    en_caso_de_que A es_distinto_de 0.
+        en_caso_de_que A es_igual_a B.
+            en_caso_de_que B es_igual_a C.
+                devolver A.
+            fin.
+        fin.
+    fin.
+    A igual Celda 0 y 2.
+    B igual Celda 1 y 1.
+    C igual Celda 2 y 0.
+    en_caso_de_que A es_distinto_de 0.
+        en_caso_de_que A es_igual_a B.
+            en_caso_de_que B es_igual_a C.
+                devolver A.
+            fin.
+        fin.
+    fin.
+    Vacias igual 0.
+    I igual 0.
+    mientras I es_menor_que 9.
+        I1 igual I mas 1.
+        en_caso_de_que Elemento I1 de Grid es_igual_a 0.
+            Vacias igual Vacias mas 1.
+        fin.
+        I igual I mas 1.
+    fin.
+    en_caso_de_que Vacias es_igual_a 0.
+        devolver 3.
+    fin.
+    devolver 0.
+fin.
+
+funcion JugarIA.
+    I igual 0.
+    mientras I es_menor_que 9.
+        I1 igual I mas 1.
+        en_caso_de_que Elemento I1 de Grid es_igual_a 0.
+            Elemento I1 de Grid igual 2.
+            G igual HayGanador.
+            en_caso_de_que G es_igual_a 2.
+                devolver I.
+            sino.
+                Elemento I1 de Grid igual 0.
+            fin.
+        fin.
+        I igual I mas 1.
+    fin.
+    I igual 0.
+    mientras I es_menor_que 9.
+        I1 igual I mas 1.
+        en_caso_de_que Elemento I1 de Grid es_igual_a 0.
+            Elemento I1 de Grid igual 1.
+            G igual HayGanador.
+            en_caso_de_que G es_igual_a 1.
+                Elemento I1 de Grid igual 0.
+                devolver I.
+            sino.
+                Elemento I1 de Grid igual 0.
+            fin.
+        fin.
+        I igual I mas 1.
+    fin.
+    en_caso_de_que Elemento 5 de Grid es_igual_a 0.
+        devolver 4.
+    fin.
+    Esquinas igual lista 0 y 2 y 6 y 8.
+    J igual 1.
+    mientras J es_menor_que 5.
+        E igual Elemento J de Esquinas.
+        E1 igual E mas 1.
+        en_caso_de_que Elemento E1 de Grid es_igual_a 0.
+            devolver E.
+        fin.
+        J igual J mas 1.
+    fin.
+    I igual 0.
+    mientras I es_menor_que 9.
+        I1 igual I mas 1.
+        en_caso_de_que Elemento I1 de Grid es_igual_a 0.
+            devolver I.
+        fin.
+        I igual I mas 1.
+    fin.
+    devolver -1.
+fin.
+
+funcion DibujarGrid.
+    V limpiar.
+    V color 200 y 200 y 200.
+    V linea 160 y 40 a 160 y 360.
+    V linea 320 y 40 a 320 y 360.
+    V linea 40 y 120 a 440 y 120.
+    V linea 40 y 240 a 440 y 240.
+    I igual 0.
+    NT igual Longitud de Grid.
+    mientras I es_menor_que NT.
+        Fila igual 0.
+        en_caso_de_que I es_mayor_que 2.
+            Fila igual 1.
+        fin.
+        en_caso_de_que I es_mayor_que 5.
+            Fila igual 2.
+        fin.
+        Col igual I menos Fila por 3.
+        PX igual 40 mas Col por 160 mas 60.
+        PY igual 40 mas Fila por 120 mas 40.
+        I1 igual I mas 1.
+        Val igual Elemento I1 de Grid.
+        en_caso_de_que Val es_igual_a 1.
+            V color 255 y 50 y 50.
+            V linea PX menos 40 y PY menos 40 a PX mas 40 y PY mas 40.
+            V linea PX mas 40 y PY menos 40 a PX menos 40 y PY mas 40.
+        fin.
+        en_caso_de_que Val es_igual_a 2.
+            V color 50 y 50 y 255.
+            V circulo PX y PY y 40.
+        fin.
+        I igual I mas 1.
+    fin.
+    V color 200 y 200 y 200.
+    en_caso_de_que Ganador es_igual_a 0.
+        en_caso_de_que Turno es_igual_a 1.
+            V rotulo 140 y 400 y "Tu turno (X)".
+        sino.
+            V rotulo 140 y 400 y "Turno IA (O)".
+        fin.
+    fin.
+    en_caso_de_que Ganador es_igual_a 1.
+        V color 255 y 50 y 50.
+        V rotulo 140 y 400 y "GANASTE! (X)".
+    fin.
+    en_caso_de_que Ganador es_igual_a 2.
+        V color 50 y 50 y 255.
+        V rotulo 140 y 400 y "IA GANA (O)".
+    fin.
+    en_caso_de_que Ganador es_igual_a 3.
+        V color 200 y 200 y 0.
+        V rotulo 140 y 400 y "EMPATE".
+    fin.
+    V color 150 y 150 y 150.
+    V rotulo 100 y 440 y "Click para jugar. R=reiniciar. Q=salir".
+    V voltear.
+fin.
+
+funcion Reiniciar.
+    I igual 0.
+    mientras I es_menor_que 9.
+        I1 igual I mas 1.
+        Elemento I1 de Grid igual 0.
+        I igual I mas 1.
+    fin.
+    Turno igual 1.
+    Ganador igual 0.
+    ClickProcesado igual falso.
+fin.
+
+
+tick 60.
+    en_caso_de_que Ganador es_igual_a 0.
+        en_caso_de_que Turno es_igual_a 1.
+            en_caso_de_que VentanaBotonIzq es_igual_a 1.
+                en_caso_de_que ClickProcesado es_igual_a falso.
+                    ClickProcesado igual verdad.
+                    MX igual VentanaRatonX.
+                    MY igual VentanaRatonY.
+                    en_caso_de_que MX es_mayor_que 40.
+                        en_caso_de_que MX es_menor_que 440.
+                            en_caso_de_que MY es_mayor_que 40.
+                                en_caso_de_que MY es_menor_que 360.
+                                    Col igual 0.
+                                    en_caso_de_que MX es_mayor_que 200.
+                                        Col igual 1.
+                                    fin.
+                                    en_caso_de_que MX es_mayor_que 360.
+                                        Col igual 2.
+                                    fin.
+                                    Fila igual 0.
+                                    en_caso_de_que MY es_mayor_que 160.
+                                        Fila igual 1.
+                                    fin.
+                                    en_caso_de_que MY es_mayor_que 280.
+                                        Fila igual 2.
+                                    fin.
+                                    I igual Indice Fila y Col.
+                                    I1 igual I mas 1.
+                                    en_caso_de_que Elemento I1 de Grid es_igual_a 0.
+                                        Colocar Fila y Col y 1.
+                                        Freq igual 300 mas azar 500.
+                                        Dur igual 50 mas azar 100.
+                                        SndBeep Freq y Dur.
+                                        Ganador igual HayGanador.
+                                        en_caso_de_que Ganador es_igual_a 0.
+                                            Turno igual 2.
+                                        fin.
+                                    fin.
+                                fin.
+                            fin.
+                        fin.
+                    fin.
+                fin.
+            sino.
+                ClickProcesado igual falso.
+            fin.
+        fin.
+        en_caso_de_que Turno es_igual_a 2.
+            en_caso_de_que ModoIA.
+                Pos igual JugarIA.
+                en_caso_de_que Pos es_mayor_o_igual 0.
+                    Fila igual 0.
+                    en_caso_de_que Pos es_mayor_que 2.
+                        Fila igual 1.
+                    fin.
+                    en_caso_de_que Pos es_mayor_que 5.
+                        Fila igual 2.
+                    fin.
+                    Col igual Pos menos Fila por 3.
+                    Colocar Fila y Col y 2.
+                    Freq igual 200 mas azar 400.
+                    Dur igual 50 mas azar 100.
+                    SndBeep Freq y Dur.
+                    Ganador igual HayGanador.
+                    en_caso_de_que Ganador es_igual_a 0.
+                        Turno igual 1.
+                    fin.
+                fin.
+            fin.
+        fin.
+    fin.
+    en_caso_de_que VentanaTecla 82 es_igual_a 1.
+        Reiniciar.
+    fin.
+    en_caso_de_que VentanaTecla 81 es_igual_a 1.
+        V cerrar.
+        para.
+    fin.
+    DibujarGrid.
+fin.

@@ -1,0 +1,12 @@
+funcion Factorial N.
+    Resultado igual 1.
+    I igual 2.
+    mientras I es_menor_o_igual N.
+        Resultado igual Resultado por I.
+        I igual I mas 1.
+    fin.
+    devolver Resultado.
+fin.
+La Fact igual Factorial 5.
+mostrar "Factorial de 5:".
+mostrar La Fact.

@@ -1,0 +1,8 @@
+| features_030.try_catch_lanzar.coma — Try/catch/lanzar
+Try.
+    Cuerpo_Try.
+        Lanzar "Error de prueba."
+    Catch.
+        Cuerpo_Catch.
+            Mostrar "Error capturado."
+Fin.

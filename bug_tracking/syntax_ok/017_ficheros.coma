@@ -1,0 +1,9 @@
+| syntax_ok_017.ficheros.coma — Operaciones de fichero
+Crear "prueba.txt".
+Escribir "Linea 1."
+Escribir "Linea 2."
+Cerrar.
+Abrir "prueba.txt".
+Leer Linea.
+Mostrar Linea.
+Cerrar.

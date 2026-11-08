@@ -1,0 +1,12 @@
+funcion La Sumar A y B.
+    devolver A mas B.
+fin.
+funcion The Triple X.
+    return X times 3.
+fin.
+La R igual La Sumar 2 y 3.
+The R2 igual The Triple La R.
+mostrar "R:".
+mostrar La R.
+mostrar "R2:".
+mostrar The R2.

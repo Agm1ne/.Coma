@@ -1,0 +1,6 @@
+open "nonexistent_xyz.txt".
+read Linea.
+show Linea.
+close.
+
+

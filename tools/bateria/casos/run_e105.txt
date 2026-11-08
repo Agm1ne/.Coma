@@ -1,0 +1,1 @@
+E105 abrir: no se puede (nonexistent_xyz.txt). Falta el fichero o permiso denegado (prueba consola de administrador) (linea 1, en principal).

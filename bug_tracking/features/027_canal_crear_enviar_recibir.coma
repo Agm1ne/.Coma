@@ -1,0 +1,5 @@
+| features_027.canal_crear_enviar_recibir.coma — Canal crear/enviar/recibir
+Canal Crear C1.
+Canal Enviar 42 A C1.
+Canal Recibir X De C1.
+Mostrar X.

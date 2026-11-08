@@ -1,0 +1,8 @@
+function Fact N.
+in case of que N es menor to 2.
+return 1.
+end.
+return N times Fact N minus 1.
+end.
+show Fact 5.
+

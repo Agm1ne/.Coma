@@ -1,0 +1,10 @@
+funcion Maximo A y B.
+    en_caso_de_que A es_mayor_que B.
+        devolver A.
+    sino.
+        devolver B.
+    fin.
+fin.
+La Mayor igual Maximo 7 y 3.
+mostrar "Maximo de 7 y 3:".
+mostrar La Mayor.

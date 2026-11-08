@@ -1,0 +1,8 @@
+function Duplicar X.
+return X times 2.
+end.
+function Aplicar F.
+return Duplicar F.
+end.
+show Aplicar 5.
+

@@ -1,0 +1,4 @@
+function external nombre as int alias "f" usando cdecl.
+
+
+

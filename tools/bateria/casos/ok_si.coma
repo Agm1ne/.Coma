@@ -1,0 +1,6 @@
+N igual 3.
+si N es_igual_a 3.
+    show "es tres".
+sino.
+    show "no es tres".
+fin.

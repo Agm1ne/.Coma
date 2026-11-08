@@ -1,0 +1,62 @@
+[INFO] motor.dll de prueba...
+[OK] mal_aridad_expr_E202 (falla con E202)
+[OK] mal_arity_E202 (falla con E202)
+[OK] mal_asa_agregar_E202 (falla con E202)
+[OK] mal_asa_azar_E202 (falla con E202)
+[OK] mal_asa_devuelve_E202 (falla con E202)
+[OK] mal_asa_enviar_E202 (falla con E202)
+[OK] mal_asa_int_E202 (falla con E202)
+[OK] mal_asa_lista_E202 (falla con E202)
+[OK] mal_asa_menos_E202 (falla con E202)
+[OK] mal_asa_mixta_E202 (falla con E202)
+[OK] mal_asa_ordena_E202 (falla con E202)
+[OK] mal_asa_pedir_E202 (falla con E202)
+[OK] mal_asa_recorre_E202 (falla con E202)
+[OK] mal_asa_segun_E202 (falla con E202)
+[OK] mal_asa_suma_E202 (falla con E202)
+[OK] mal_asa_texto_E202 (falla con E202)
+[OK] mal_cargar_falta_E001 (falla con E001)
+[OK] mal_cargar_sinc_E001 (falla con E001)
+[OK] mal_devolver_E202 (falla con E202)
+[OK] mal_direccion_mala_E003 (falla con E003)
+[OK] mal_direccion_var_E202 (falla con E202)
+[OK] mal_duplicada_E003 (falla con E003)
+[OK] mal_ext_alias_E001 (falla con E001)
+[OK] mal_ext_conv_E001 (falla con E001)
+[OK] mal_ext_lista_E202 (falla con E202)
+[OK] mal_ext_minusc_E001 (falla con E001)
+[OK] mal_gpu_destino_E202 (falla con E202)
+[OK] mal_gpu_numero_E202 (falla con E202)
+[OK] mal_gpu_sin_a_E001 (falla con E001)
+[OK] mal_gpu_texto_E202 (falla con E202)
+[OK] mal_https_destino_E202 (falla con E202)
+[OK] mal_https_numero_E202 (falla con E202)
+[OK] mal_https_sin_a_E001 (falla con E001)
+[OK] mal_https_sin_traer_E001 (falla con E001)
+[OK] mal_mezcla_E202 (falla con E202)
+[OK] mal_param_reservado_E001 (falla con E001)
+[OK] mal_reservada_E001 (falla con E001)
+[OK] mal_sin_fin_E001 (falla con E001)
+[OK] mal_sin_punto_E001 (falla con E001)
+[OK] mal_unknown_E003 (falla con E003)
+[OK] ok_anidadas
+[OK] ok_asa
+[OK] ok_audio
+[OK] ok_callback
+[OK] ok_ffi
+[OK] ok_fichero
+[OK] ok_flujo
+[OK] ok_funcion
+[OK] ok_gpu
+[OK] ok_hola
+[OK] ok_listas
+[OK] ok_mem
+[OK] ok_recursiva
+[OK] ok_texto_doble
+[OK] ok_traer_ext
+[OK] ok_trig
+[OK] run_e101 (falla en vivo)
+[OK] run_e102 (falla en vivo)
+[OK] run_e105 (falla en vivo)
+
+BATERIA: 59 bien, 0 mal.

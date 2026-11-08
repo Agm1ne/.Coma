@@ -1,0 +1,12 @@
+mostrar "Hora:".
+mostrar Hora.
+mostrar "Fecha:".
+mostrar Fecha.
+mostrar "Sistema:".
+mostrar Sistema.
+mostrar "Usuario:".
+mostrar Usuario.
+mostrar "Version:".
+mostrar Version.
+mostrar "Directorio:".
+mostrar Directorio.

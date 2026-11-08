@@ -1,0 +1,8 @@
+function Hija Y.
+return Y plus 1.
+end.
+function Padre X.
+return Hija X.
+end.
+show Padre 5.
+

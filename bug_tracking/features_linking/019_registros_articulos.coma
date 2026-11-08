@@ -1,0 +1,9 @@
+La Persona igual registro Nombre "Juan" y Edad 30.
+El Heroe igual registro Vida 100 y energia 50.
+mostrar elemento 1 de La Persona.
+mostrar elemento 2 de La Persona.
+mostrar elemento 1 de El Heroe.
+mostrar elemento 2 de El Heroe.
+La Vida igual elemento 1 de El Heroe.
+mostrar "Vida del heroe:".
+mostrar La Vida.

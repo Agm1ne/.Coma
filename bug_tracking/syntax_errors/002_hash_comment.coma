@@ -1,0 +1,3 @@
+| syntax_errors_002.hash_comment.coma — # no es comentario válido
+# Esto es un comentario inválido
+Mostrar "Hola."

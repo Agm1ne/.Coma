@@ -1,0 +1,5 @@
+contador igual 0.
+mientras contador es_menor_a 3.
+    show contador.
+    contador igual contador mas 1.
+fin.

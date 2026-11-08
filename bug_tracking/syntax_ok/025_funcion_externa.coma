@@ -1,0 +1,3 @@
+| syntax_ok_025.funcion_externa.coma — Función externa FFI
+Funcion Externa Beep Frecuencia Como Entero Como Entero Alias "Beep" Usando Cdecl.
+Beep 440 Y 100.

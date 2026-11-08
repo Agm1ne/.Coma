@@ -44,6 +44,10 @@ type
     continueStack*: seq[string]
     breakLabels*: Table[string, string]
     contLabels*: Table[string, string]
+    # Cierre: nombre de variable capturada -> global del entorno (@closure_Padre_Hija_Var).
+    curCaptured*: Table[string, string]
+    # Variables elevadas a global porque alguna función anidada las captura.
+    capturedGlobals*: Table[string, DataTypeKind]
     usesBoard*: bool
     usesTecla*: bool
     usesTime*: bool
@@ -80,6 +84,8 @@ proc newCodeGen*(semaCtx: SemaContext): CodeGen =
   result.continueStack = @[]
   result.breakLabels = initTable[string, string]()
   result.contLabels = initTable[string, string]()
+  result.curCaptured = initTable[string, string]()
+  result.capturedGlobals = initTable[string, DataTypeKind]()
   result.usesBoard = false
   result.usesTecla = false
   result.usesTime = false
@@ -651,6 +657,10 @@ proc collectBodyLocals(cg: var CodeGen, body: Node, types: var Table[string, Dat
   if body == nil: return
   case body.kind
   of nkAssign:
+    # Las capturadas de closure ya son globales: no alloca local.
+    if cg.capturedGlobals.hasKey(body.identName):
+      collectBodyLocals(cg, body.left, types)
+      return
     if not types.hasKey(body.identName):
       if body.left != nil and body.left.kind == nkStr:
         types[body.identName] = dtString
@@ -768,6 +778,22 @@ proc genExpr*(cg: var CodeGen, n: Node): (string, string) =
     return (t, "i8*")
 
   of nkIdent:
+    # Variable capturada por closure: se elevó a global, leer de ella.
+    if cg.curCaptured.hasKey(n.identName):
+      let g = cg.curCaptured[n.identName]
+      let lt = cg.capturedGlobals[n.identName]
+      if lt == dtString:
+        let t = cg.newTemp()
+        cg.emit(t & " = load i8*, i8** " & g)
+        return (cg.strLive(t), "i8*")
+      elif lt == dtFloat:
+        let t = cg.newTemp()
+        cg.emit(t & " = load double, double* " & g)
+        return (t, "double")
+      else:
+        let t = cg.newTemp()
+        cg.emit(t & " = load i32, i32* " & g)
+        return (t, "i32")
     if cg.inFunction and cg.locals.hasKey(n.identName):
       let lt = if cg.localTyps.hasKey(n.identName): cg.localTyps[n.identName] else: dtInt
       if lt == dtString:
@@ -1506,6 +1532,17 @@ proc genStmt*(cg: var CodeGen, n: Node) =
       cg.emit("call void @coma_llist_copy(%CListList* " & lp & ", %CListList* " & tmp & ")")
       return
     cg.storeToVar(n.identName, v, ty)
+    # Capturada de closure: escribir a la global del entorno (sobrescribe el local).
+    if cg.curCaptured.hasKey(n.identName):
+      let g = cg.curCaptured[n.identName]
+      let lt = cg.capturedGlobals[n.identName]
+      if lt == dtString:
+        cg.emit("call void @coma_str_assign(i8** " & g & ", i8* " & v & ")")
+      elif lt == dtFloat:
+        cg.emit("store double " & v & ", double* " & g)
+      else:
+        cg.emit("store i32 " & cg.toI32(v, ty) & ", i32* " & g)
+      return
 
   of nkFieldAssign:
     # `Vida de E igual X.` / `Vida de elemento 2 de G igual X.`
@@ -2634,6 +2671,7 @@ proc collectFuncs(root: Node, outSeq: var seq[Node]) =
   case root.kind
   of nkFuncDecl:
     outSeq.add(root)
+    collectFuncs(root.thenBlock, outSeq)  # funciones anidadas (closures)
   of nkProgram, nkBlock:
     for c in root.children: collectFuncs(c, outSeq)
   else:
@@ -2662,6 +2700,12 @@ proc emitFuncs(cg: var CodeGen, root: Node) =
     cg.curFreeList = @[]
     cg.curFreeSList = @[]
     cg.curFreeLList = @[]
+    cg.curCaptured = initTable[string, string]()
+    for vn, vt in cg.capturedGlobals:
+      cg.curCaptured[vn] = case vt
+        of dtString: cg.ensureStrGlobal(vn)
+        of dtFloat: cg.ensureFloatGlobal(vn)
+        else: cg.ensureIntGlobal(vn)
     let retDecl = if retTy == dtString: "i8*"
                   elif retTy == dtFloat: "double"
                   elif retTy == dtList: "%CList"
@@ -2778,10 +2822,38 @@ proc emitFuncs(cg: var CodeGen, root: Node) =
   cg.locals.clear()
   cg.localTyps.clear()
 
+proc collectClosureCaptures(n: Node, outTab: var Table[string, DataTypeKind]) =
+  ## Recolecta variables locales del padre que son capturadas por funciones
+  ## anidadas (capturedVars de cada nkFuncDecl). Se elevan a globals.
+  if n == nil: return
+  case n.kind
+  of nkFuncDecl:
+    for i in 0 ..< n.capturedVars.len:
+      let vn = n.capturedVars[i]
+      let vt = if i < n.capturedTyps.len: n.capturedTyps[i] else: dtInt
+      if not outTab.hasKey(vn):
+        outTab[vn] = vt
+    collectClosureCaptures(n.thenBlock, outTab)
+  of nkProgram, nkBlock:
+    for c in n.children: collectClosureCaptures(c, outTab)
+  else:
+    if n.thenBlock != nil: collectClosureCaptures(n.thenBlock, outTab)
+    if n.elseBlock != nil and n.elseBlock.kind in {nkBlock, nkIf}:
+      collectClosureCaptures(n.elseBlock, outTab)
+    for c in n.children: collectClosureCaptures(c, outTab)
+
+proc closureGlobal(cg: var CodeGen, name: string, ty: DataTypeKind): string =
+  case ty
+  of dtString: return cg.ensureStrGlobal(name)
+  of dtFloat: return cg.ensureFloatGlobal(name)
+  else: return cg.ensureIntGlobal(name)
+
 proc generateIR*(root: Node, semaCtx: SemaContext): string =
   var cg = newCodeGen(semaCtx)
   var bodyCg = newCodeGen(semaCtx)
   cg.usesAgmine = usesFirma(root)
+  # Recolectar variables capturadas por closures y elevarlas a globals.
+  collectClosureCaptures(root, bodyCg.capturedGlobals)
   bodyCg.emitFuncs(root)
   bodyCg.lines.add("define i32 @main() {")
   bodyCg.lines.add("entry:")

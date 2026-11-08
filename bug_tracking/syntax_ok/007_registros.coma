@@ -1,0 +1,4 @@
+| syntax_ok_007.registros.coma — Registros básicos
+Persona Igual Registro Nombre "Juan" Y Edad 30.
+Mostrar Elemento 1 De Persona.
+Mostrar Elemento 2 De Persona.

@@ -8,14 +8,35 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+#include <math.h>
 
 static FILE *cur = 0;
 static char curpath[512] = "";
 static int reg = 0;
+static int cur_linea = 0;
+static char cur_func[128] = "principal";
+
+void coma_donde(int linea, const char *func) {
+    cur_linea = linea;
+    if (func && func[0]) {
+        strncpy(cur_func, func, sizeof(cur_func) - 1);
+        cur_func[sizeof(cur_func) - 1] = 0;
+    } else {
+        strncpy(cur_func, "principal", sizeof(cur_func) - 1);
+        cur_func[sizeof(cur_func) - 1] = 0;
+    }
+}
+
+void coma_einfo(void) {
+    printf(" (linea %d, en %s).", cur_linea, cur_func);
+}
 
 static void e105(const char *op, const char *p) {
-    printf("E105 %s: no se puede (%s). Falta el fichero o permiso denegado (prueba consola de administrador).\n",
+    printf("E105 %s: no se puede (%s). Falta el fichero o permiso denegado (prueba consola de administrador)",
            op, (p && p[0]) ? p : "?");
+    coma_einfo();
+    printf("\n");
     fflush(stdout);
     exit(1);
 }
@@ -116,4 +137,28 @@ void coma_f_delete(const char *path) {
     if (!path || !path[0]) e105("eliminar", path);
     if (cur && strcmp(curpath, path) == 0) autocierra(); /* win no borra abiertos */
     if (remove(path) != 0) e105("eliminar", path);
+}
+
+/* --- Memoria directa (bajo tu riesgo): lee el valor al que apunta un asa --- */
+int coma_memoria_i32(int64_t h) {
+    if (!h) return 0;
+    return *(int32_t*)h;
+}
+
+double coma_memoria_f64(int64_t h) {
+    if (!h) return 0.0;
+    return *(double*)h;
+}
+
+const char *coma_memoria_str(int64_t h) {
+    if (!h) return "";
+    return (const char*)h;
+}
+
+double coma_seno(double x) {
+    return sin(x);
+}
+
+double coma_coseno(double x) {
+    return cos(x);
 }

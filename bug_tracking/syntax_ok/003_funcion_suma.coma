@@ -1,0 +1,5 @@
+| syntax_ok_003.funcion_suma.coma — Función con parámetros
+Funcion Sumar A Y B.
+    Devolver A Mas B.
+Fin.
+Mostrar Sumar 5 Y 7.

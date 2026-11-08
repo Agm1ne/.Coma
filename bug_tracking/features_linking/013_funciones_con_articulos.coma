@@ -1,0 +1,12 @@
+funcion La Sumar A y B.
+    devolver A mas B.
+fin.
+funcion El Doble X.
+    devolver X por 2.
+fin.
+La Resultado igual La Sumar 5 y 3.
+El Doblado igual El Doble La Resultado.
+mostrar "Resultado:".
+mostrar La Resultado.
+mostrar "Doblado:".
+mostrar El Doblado.

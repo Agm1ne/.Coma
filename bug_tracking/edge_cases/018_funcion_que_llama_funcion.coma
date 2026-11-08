@@ -1,0 +1,8 @@
+| edge_cases_018.funcion_que_llama_funcion.coma — Función que llama función
+Funcion Doblar X.
+    Devolver X Por 2.
+Fin.
+Funcion Cuadruplicar X.
+    Devolver Doblar Doblar X.
+Fin.
+Mostrar Cuadruplicar 5.

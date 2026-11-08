@@ -1,0 +1,8 @@
+| syntax_ok_026.gpu.coma — GPU compute
+Gpu Iniciar.
+Entrada Igual Lista 1 Y 2 Y 3 Y 4 Y 5.
+Salida Igual Lista.
+Gpu Programa "out = in + 1."
+Gpu Ejecutar Entrada Y Salida.
+Mostrar Elemento 1 De Salida.
+Gpu Terminar.

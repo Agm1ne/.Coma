@@ -1,0 +1,7 @@
+Total igual 0.
+I igual 1.
+Mientras I es_menor_o_igual 1000000.
+    Total igual Total mas I.
+    I igual I mas 1.
+fin.
+mostrar Total.

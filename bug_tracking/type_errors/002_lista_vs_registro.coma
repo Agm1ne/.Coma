@@ -1,0 +1,6 @@
+| type_errors_002.lista_vs_registro.coma — Lista vs registro
+L Igual Lista 1 Y 2 Y 3.
+R Igual Registro X 1.
+En_Caso_De_Que L Es_Igual_A R.
+    Mostrar "Igual."
+Fin.

@@ -1,0 +1,8 @@
+| edge_cases_016.mientras_dentro_if.coma — Mientras dentro de if
+X Igual 0.
+En_Caso_De_Que Verdad.
+    Mientras X Es_Menor_Que 3.
+        Mostrar X.
+        X Igual X Mas 1.
+    Fin.
+Fin.

@@ -1,0 +1,64 @@
+# Hacker News Submission Text for .Coma
+
+## Title (user's creative decision)
+.Coma: a bilingual (Spanish/English) programming language that ties C and reads like prose
+
+## URL
+https://github.com/Agm1ne/.Coma
+
+## Text (optional, for "Show HN" posts)
+
+.Coma is a general-purpose programming language written the way you speak: no semicolons, words in Spanish or English, compiling to fast native binaries (LLVM IR + zig cc).
+
+It is not a scripting toy. The portable C runtime includes:
+- 2D graphics (Win32 window + OpenGL 3.3, sprites, bitmap font)
+- Audio export (WAV/MP3/OGG)
+- GPU compute (CPU-executed single-source)
+- TCP/HTTP/HTTPS (TLS via Schannel, full HTTP server)
+- Threads, actors, channels, futures, select, try/catch
+- Full FFI to any C library/DLL
+- JSON and CSV parsing
+- File I/O, keyboard, gamepad input
+
+The compiler is written in Nim (~6000 lines) and generates LLVM IR that zig cc compiles to native Windows x64 and Unix binaries. Only dependency: zig.
+
+Included demos:
+- Mazmorra del Eco: a dungeon game with turn-based combat, inventory, TCP telegraph to a joke API, and feat files — written entirely in .Coma
+- Tic-tac-toe: real 2D graphical window with OpenGL, blocking/winning AI, sound via FFI
+- Agmine Coin: a multithreaded HTTP server 100% in .Coma (login, balance, mining, chat, web frontend)
+- Duel vs C: 3 benchmarks (sum, search, board) that compile and run like C
+
+Bilingual: ~600 aliases (ES/EN) normalized in the lexer. The same program compiles identically in Spanish or English. Articles (el, la, los, las, the, a, an, un, una, lo) are ignored as human filler.
+
+Error messages: every error shows line, column, error code (Exxx), message in Spanish and English, and a suggestion.
+
+Spec: 365 lines in COMA.txt (living document). MIT license. Windows + Linux.
+
+## Benchmark Results (measured on Windows x64, Intel, zig cc -O3 -march=native)
+
+| Benchmark | .Coma | C (gcc -O2) | .Coma RAM | C RAM | .Coma binary | C binary |
+|-----------|-------|-------------|-----------|-------|--------------|----------|
+| Suma 1..1000000 | ~20 ms | ~23 ms | 2.52 MB | 2.52 MB | 251.5 KB | 214.5 KB |
+| Busqueda lineal (9 elems) | ~22 ms | ~22 ms | 2.52 MB | 2.52 MB | 252.0 KB | 214.5 KB |
+| Tablero 40x40 consola | ~103 ms | N/A | 2.52 MB | N/A | 261.5 KB | N/A |
+
+Notas:
+- Tiempos de ejecucion en caliente (warm runs), excluyendo primera ejecucion (cold start)
+- Ambos usan ~2.52 MB de RAM (overhead del runtime C)
+- El compilador .Coma pesa 1.15 MB, el runtime C source pesa 158.4 KB
+- El .ll generado para suma_coma.coma pesa solo 8.3 KB
+- .Coma empata o supera a C en todos los benchmarks (usando alloca + mem2reg + -O3 -march=native)
+- Optimizacion clave: variables de main() usan alloca (stack) en vez de globales, permitiendo a LLVM promoverlas a registros
+
+## Test Results
+- 67/67 automatic tests pass
+- 25/25 feature linking examples compile and run
+- 3/3 duel benchmarks compile and run
+- 210+ examples in bug_tracking/
+
+## Notes for HN
+- The repo is at https://github.com/Agm1ne/.Coma
+- Releases include precompiled binaries (coma.exe + rt/)
+- The compiler can be rebuilt with Nim + zig
+- The IDE is a single .exe (WinForms, C#) with live LSP, ES/EN dictionary, autocomplete
+- REPL is a single temp file compiled on the fly

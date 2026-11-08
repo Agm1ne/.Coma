@@ -1,0 +1,6 @@
+| features_007.sinónimos_mientras.coma — Sinónimos de mientras
+X Igual 0.
+Mientras X Es_Menor_Que 3.
+    Mostrar X.
+    X Igual X Mas 1.
+Fin.

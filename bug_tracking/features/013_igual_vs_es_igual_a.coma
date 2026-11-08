@@ -1,0 +1,8 @@
+| features_013.igual_vs_es_igual_a.coma — Igual vs es_igual_a
+X Igual 5.
+En_Caso_De_Que X Es_Igual_A 5.
+    Mostrar "Igual."
+Fin.
+En_Caso_De_Que X Es 5.
+    Mostrar "Tambien igual."
+Fin.

@@ -1,0 +1,10 @@
+funcion Sumar A y B.
+    devolver A mas B.
+fin.
+funcion TripleSuma A y B y C.
+    La Tmp igual Sumar A y B.
+    devolver Sumar La Tmp y C.
+fin.
+La Resultado igual TripleSuma 1 y 2 y 3.
+mostrar "Resultado:".
+mostrar La Resultado.

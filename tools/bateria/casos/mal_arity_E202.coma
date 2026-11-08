@@ -1,0 +1,6 @@
+function Saludar Nombre as texto as texto.
+    return Nombre.
+end.
+show Saludar.
+
+

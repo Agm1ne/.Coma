@@ -1,0 +1,10 @@
+comprobar "suma simple".
+    A igual 1.
+    B igual 2.
+    Resultado igual A mas B.
+    en_caso_de_que Resultado es_igual_a 3.
+        mostrar "OK: suma simple".
+    sino.
+        mostrar "FALLO: suma simple".
+    fin.
+fin.

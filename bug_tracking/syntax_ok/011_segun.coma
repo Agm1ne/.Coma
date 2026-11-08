@@ -1,0 +1,12 @@
+| syntax_ok_011.segun.coma — Switch segun/caso
+Dia Igual 2.
+Segun Dia.
+    Caso 1.
+        Mostrar "Lunes."
+    Caso 2.
+        Mostrar "Martes."
+    Caso 3.
+        Mostrar "Miercoles."
+    Otro.
+        Mostrar "Otro dia."
+Fin.

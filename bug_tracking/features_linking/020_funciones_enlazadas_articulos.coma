@@ -1,0 +1,18 @@
+funcion La Sumar A y B.
+    devolver A mas B.
+fin.
+funcion El Doble X.
+    devolver X por 2.
+fin.
+funcion La Triple X.
+    devolver X por 3.
+fin.
+La R1 igual La Sumar 2 y 3.
+El R2 igual El Doble La R1.
+La R3 igual La Triple El R2.
+mostrar "R1:".
+mostrar La R1.
+mostrar "R2:".
+mostrar El R2.
+mostrar "R3:".
+mostrar La R3.

@@ -1,0 +1,5 @@
+| semantic_errors_030.comparacion_asa_texto.coma — Comparación asa vs texto
+P Ip A X.
+En_Caso_De_Que Ip Es_Igual_A "texto".
+    Mostrar "Igual."
+Fin.

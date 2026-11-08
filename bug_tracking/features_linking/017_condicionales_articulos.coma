@@ -1,0 +1,10 @@
+La X igual 10.
+en_caso_de_que La X es_mayor_que 5.
+    mostrar "La X es mayor que 5.".
+sino.
+    mostrar "La X es menor o igual que 5.".
+fin.
+El Y igual 3.
+en_caso_de_que El Y es_menor_que 5.
+    mostrar "El Y es menor que 5.".
+fin.

@@ -1,0 +1,11 @@
+dia igual 12.
+segun dia.
+    caso 6.
+        mostrar "Desayuno."
+    caso 12.
+        mostrar "Almuerzo."
+    caso 18.
+        mostrar "Cena."
+    otro.
+        mostrar "Hora de descanso."
+fin.

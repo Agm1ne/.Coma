@@ -1,0 +1,6 @@
+| type_errors_006.lista_lista_vs_lista.coma — Lista de listas vs lista
+L1 Igual Lista Lista 1 Y 2.
+L2 Igual Lista 1 Y 2.
+En_Caso_De_Que L1 Es_Igual_A L2.
+    Mostrar "Igual."
+Fin.

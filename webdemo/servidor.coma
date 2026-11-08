@@ -1,0 +1,488 @@
+funcion externa SrvStart Puerto como entero como entero alias "coma_srv_start" usando cdecl.
+funcion externa SrvAccept Servidor como entero como entero alias "coma_srv_accept" usando cdecl.
+funcion externa SrvReadStr Cliente como entero como texto alias "coma_srv_read_str" usando cdecl.
+funcion externa SrvWrite Cliente como entero y Datos como texto como entero alias "coma_srv_write" usando cdecl.
+funcion externa SrvClose Sock como entero como entero alias "coma_srv_close" usando cdecl.
+funcion externa StrHash S como texto como entero alias "srv_hash" usando cdecl.
+funcion externa StrFind S como texto y Sub como texto como entero alias "srv_str_find" usando cdecl.
+funcion externa StrSub S como texto y Start como entero y Len como entero como texto alias "srv_str_sub" usando cdecl.
+funcion externa SrvRespond Cliente como entero y Cuerpo como texto como entero alias "srv_respond" usando cdecl.
+funcion externa SrvCorsPreflight Cliente como entero como entero alias "srv_cors_preflight" usando cdecl.
+funcion externa SrvSendHeaders Cliente como entero como entero alias "srv_send_headers" usando cdecl.
+funcion externa SrvSendInt Cliente como entero y Valor como entero como entero alias "srv_send_int" usando cdecl.
+funcion externa SrvAtoi S como texto como entero alias "srv_atoi" usando cdecl.
+funcion externa SrvIsOptions Buf como texto como entero alias "srv_is_options" usando cdecl.
+funcion externa SrvGetPath Buf como texto como texto alias "srv_get_path" usando cdecl.
+funcion externa SrvGetBody Buf como texto como texto alias "srv_get_body" usando cdecl.
+funcion externa SrvStrIcmp A como texto y B como texto como entero alias "srv_stricmp" usando cdecl.
+funcion externa SrvFileExists Ruta como texto como entero alias "srv_file_exists" usando cdecl.
+funcion externa SrvGetAccountsPath como texto alias "srv_get_accounts_path" usando cdecl.
+funcion externa SrvMkdir Ruta como texto como entero alias "srv_mkdir" usando cdecl.
+funcion externa SrvSaveFile Ruta como texto y Datos como texto como entero alias "srv_save_file" usando cdecl.
+funcion externa SrvLoadFile Ruta como texto como texto alias "srv_load_file" usando cdecl.
+funcion externa SrvGetDatadir como texto alias "srv_get_datadir" usando cdecl.
+funcion externa SrvReadFile Ruta como texto como texto alias "srv_read_file" usando cdecl.
+funcion externa SrvRespondHtml Cliente como entero y Cuerpo como texto como entero alias "srv_respond_html" usando cdecl.
+funcion externa SrvSendNl Cliente como entero como entero alias "srv_send_nl" usando cdecl.
+funcion externa SrvChatBuild Usu como texto y Msg como texto como texto alias "srv_chat_build" usando cdecl.
+funcion externa SrvUrlDecode S como texto como texto alias "srv_url_decode" usando cdecl.
+
+MaxFallos igual 3.
+
+Usuarios igual lista "admin" y "juan" y "maria" y "carlos" y "ana".
+ClavesHash igual lista 0 y 0 y 0 y 0 y 0.
+Saldos igual lista 5000 y 2500 y 1000 y 3000 y 750.
+FallosLogin igual lista 0 y 0 y 0 y 0 y 0.
+Tokens igual lista 0 y 0 y 0 y 0 y 0.
+ChatMensajes igual lista "".
+
+funcion BuscarUsu U como texto.
+    N igual Longitud de Usuarios.
+    I igual 1.
+    mientras I es_menor_o_igual N.
+        Elem igual Elemento I de Usuarios.
+        Cmp igual SrvStrIcmp Elem y U.
+        en_caso_de_que Cmp es_igual_a 0.
+            devolver I.
+        sino.
+            I igual I mas 1.
+        fin.
+    fin.
+    devolver 0.
+fin.
+
+funcion GuardarCuentas.
+    SrvMkdir "data".
+    crear "data/accounts.db".
+    N igual Longitud de Usuarios.
+    I igual 1.
+    mientras I es_menor_o_igual N.
+        Usu igual Elemento I de Usuarios.
+        Hash igual Elemento I de ClavesHash.
+        Saldo igual Elemento I de Saldos.
+        Fallos igual Elemento I de FallosLogin.
+        escribir Usu.
+        escribir Hash.
+        escribir Saldo.
+        escribir Fallos.
+        I igual I mas 1.
+    fin.
+    cerrar.
+fin.
+
+funcion EstaBloqueada Idx como entero.
+    F igual Elemento Idx de FallosLogin.
+    en_caso_de_que F es_mayor_o_igual MaxFallos.
+        devolver 1.
+    sino.
+        devolver 0.
+    fin.
+fin.
+
+funcion CargarCuentas.
+    Existe igual SrvFileExists "data/accounts.db".
+    en_caso_de_que Existe es_igual_a 0.
+        devolver 0.
+    fin.
+    mientras Longitud de Usuarios es_mayor_que 0.
+        Quitar primero de Usuarios.
+    fin.
+    mientras Longitud de ClavesHash es_mayor_que 0.
+        Quitar primero de ClavesHash.
+    fin.
+    mientras Longitud de Saldos es_mayor_que 0.
+        Quitar primero de Saldos.
+    fin.
+    mientras Longitud de FallosLogin es_mayor_que 0.
+        Quitar primero de FallosLogin.
+    fin.
+    mientras Longitud de Tokens es_mayor_que 0.
+        Quitar primero de Tokens.
+    fin.
+    abrir "data/accounts.db".
+    Linea igual "".
+    leer Linea.
+    mostrar Linea.
+    mientras Linea es_distinto_de "".
+        Usu igual Linea.
+        leer Linea.
+        Hash igual SrvAtoi Linea.
+        leer Linea.
+        Saldo igual SrvAtoi Linea.
+        leer Linea.
+        Fallos igual SrvAtoi Linea.
+        Agregar Usu a Usuarios.
+        Agregar Hash a ClavesHash.
+        Agregar Saldo a Saldos.
+        Agregar Fallos a FallosLogin.
+        Agregar 0 a Tokens.
+        leer Linea.
+    fin.
+    cerrar.
+    mostrar "Cuentas cargadas desde disco".
+fin.
+
+funcion Autenticar Usu como texto y Clave como texto.
+    Idx igual BuscarUsu Usu.
+    en_caso_de_que Idx es_igual_a 0.
+        devolver 0.
+    sino.
+        Bloq igual EstaBloqueada Idx.
+        en_caso_de_que Bloq es_igual_a 1.
+            devolver -1.
+        sino.
+            H igual StrHash Clave.
+            HGuardado igual Elemento Idx de ClavesHash.
+            en_caso_de_que H es_igual_a HGuardado.
+                Elemento Idx de FallosLogin igual 0.
+                Token igual StrHash Usu.
+                Elemento Idx de Tokens igual Token.
+                devolver Idx.
+            sino.
+                F igual Elemento Idx de FallosLogin.
+                Elemento Idx de FallosLogin igual F mas 1.
+                devolver 0.
+            fin.
+        fin.
+    fin.
+fin.
+
+funcion ObtenerParam Cuerpo como texto y Nombre como texto.
+    Pos igual StrFind Cuerpo y Nombre.
+    en_caso_de_que Pos es_menor_que 0.
+        devolver "".
+    sino.
+        EqPos igual StrFind Cuerpo y "=".
+        en_caso_de_que EqPos es_menor_que Pos.
+            SubStr igual StrSub Cuerpo y Pos y 4000.
+            EqRel igual StrFind SubStr y "=".
+            en_caso_de_que EqRel es_menor_que 0.
+                devolver "".
+            sino.
+                Inicio igual Pos mas EqRel mas 1.
+                Resto igual StrSub Cuerpo y Inicio y 4000.
+                Ampersand igual StrFind Resto y "&".
+                en_caso_de_que Ampersand es_menor_que 0.
+                    devolver Resto.
+                sino.
+                    devolver StrSub Resto y 0 y Ampersand.
+                fin.
+            fin.
+        sino.
+            Inicio igual EqPos mas 1.
+            Resto igual StrSub Cuerpo y Inicio y 4000.
+            Ampersand igual StrFind Resto y "&".
+            en_caso_de_que Ampersand es_menor_que 0.
+                devolver Resto.
+            sino.
+                devolver StrSub Resto y 0 y Ampersand.
+            fin.
+        fin.
+    fin.
+fin.
+
+funcion ManejarLogin Cliente como entero y Buffer como texto.
+    Cuerpo igual SrvGetBody Buffer.
+    Usu igual ObtenerParam Cuerpo y "usu".
+    Clave igual ObtenerParam Cuerpo y "clave".
+    mostrar "   LOGIN intento:".
+    mostrar Usu.
+    Idx igual Autenticar Usu y Clave.
+    en_caso_de_que Idx es_igual_a -1.
+        mostrar "   -> BLOQUEADA".
+        SrvRespond Cliente y "ERR:bloqueada".
+    sino.
+        en_caso_de_que Idx es_igual_a 0.
+            mostrar "   -> FALLO credenciales".
+            SrvRespond Cliente y "ERR:credenciales".
+        sino.
+            Saldo igual Elemento Idx de Saldos.
+            Token igual Elemento Idx de Tokens.
+            mostrar "   -> OK (saldo:".
+            mostrar Saldo.
+            SrvSendHeaders Cliente.
+            SrvWrite Cliente y "OK:".
+            SrvSendInt Cliente y Idx.
+            SrvWrite Cliente y ":".
+            SrvSendInt Cliente y Saldo.
+            SrvWrite Cliente y ":".
+            SrvSendInt Cliente y Token.
+            SrvSendNl Cliente.
+        fin.
+    fin.
+fin.
+
+funcion ManejarSaldo Cliente como entero y Buffer como texto.
+    Cuerpo igual SrvGetBody Buffer.
+    Usu igual ObtenerParam Cuerpo y "usu".
+    mostrar "   SALDO:".
+    mostrar Usu.
+    Idx igual BuscarUsu Usu.
+    en_caso_de_que Idx es_igual_a 0.
+        SrvRespond Cliente y "ERR:no_autenticado".
+    sino.
+        Saldo igual Elemento Idx de Saldos.
+        SrvSendHeaders Cliente.
+        SrvWrite Cliente y "SALDO:".
+        SrvSendInt Cliente y Saldo.
+        SrvSendNl Cliente.
+    fin.
+fin.
+
+funcion ManejarMinar Cliente como entero y Buffer como texto.
+    Cuerpo igual SrvGetBody Buffer.
+    Usu igual ObtenerParam Cuerpo y "usu".
+    mostrar "   MINAR:".
+    mostrar Usu.
+    Idx igual BuscarUsu Usu.
+    en_caso_de_que Idx es_igual_a 0.
+        SrvRespond Cliente y "ERR:no_autenticado".
+    sino.
+        Saldo igual Elemento Idx de Saldos.
+        NuevoSaldo igual Saldo mas 1000.
+        Elemento Idx de Saldos igual NuevoSaldo.
+        SrvSendHeaders Cliente.
+        SrvWrite Cliente y "OK:".
+        SrvSendInt Cliente y NuevoSaldo.
+        SrvSendNl Cliente.
+        GuardarCuentas.
+    fin.
+fin.
+
+funcion ManejarComprar Cliente como entero y Buffer como texto.
+    Cuerpo igual SrvGetBody Buffer.
+    Usu igual ObtenerParam Cuerpo y "usu".
+    PrecioStr igual ObtenerParam Cuerpo y "precio".
+    mostrar "   COMPRAR:".
+    mostrar Usu.
+    mostrar "   precio:".
+    mostrar PrecioStr.
+    Precio igual SrvAtoi PrecioStr.
+    Idx igual BuscarUsu Usu.
+    en_caso_de_que Idx es_igual_a 0.
+        SrvRespond Cliente y "ERR:no_autenticado".
+    sino.
+        Saldo igual Elemento Idx de Saldos.
+        en_caso_de_que Saldo es_mayor_o_igual Precio.
+            NuevoSaldo igual Saldo menos Precio.
+            Elemento Idx de Saldos igual NuevoSaldo.
+            SrvSendHeaders Cliente.
+            SrvWrite Cliente y "OK:".
+            SrvSendInt Cliente y NuevoSaldo.
+            SrvSendNl Cliente.
+            GuardarCuentas.
+        sino.
+            SrvRespond Cliente y "ERR:insuficiente".
+        fin.
+    fin.
+fin.
+
+funcion ManejarRegistro Cliente como entero y Buffer como texto.
+    Cuerpo igual SrvGetBody Buffer.
+    Usu igual ObtenerParam Cuerpo y "usu".
+    Clave igual ObtenerParam Cuerpo y "clave".
+    mostrar "   REGISTRO:".
+    mostrar Usu.
+    Idx igual BuscarUsu Usu.
+    en_caso_de_que Idx es_mayor_que 0.
+        SrvRespond Cliente y "ERR:ya_existe".
+    sino.
+        Agregar Usu a Usuarios.
+        H igual StrHash Clave.
+        Agregar H a ClavesHash.
+        Agregar 1000 a Saldos.
+        Agregar 0 a FallosLogin.
+        Agregar 0 a Tokens.
+        mostrar "   -> Registrado OK".
+        GuardarCuentas.
+        SrvRespond Cliente y "OK:registrado".
+    fin.
+fin.
+
+funcion ManejarChatEnviar Cliente como entero y Buffer como texto.
+    Cuerpo igual SrvGetBody Buffer.
+    UsuRaw igual ObtenerParam Cuerpo y "usu".
+    MsgRaw igual ObtenerParam Cuerpo y "msg".
+    Usu igual SrvUrlDecode UsuRaw.
+    Msg igual SrvUrlDecode MsgRaw.
+    mostrar "   CHAT:".
+    mostrar Usu.
+    mostrar Msg.
+    MsgCompleto igual SrvChatBuild Usu y Msg.
+    Agregar MsgCompleto a ChatMensajes.
+    GuardarChat.
+    SrvSendHeaders Cliente.
+    SrvWrite Cliente y "OK".
+    SrvSendNl Cliente.
+fin.
+
+funcion ManejarChatMensajes Cliente como entero y Buffer como texto.
+    N igual Longitud de ChatMensajes.
+    SrvSendHeaders Cliente.
+    I igual 1.
+    mientras I es_menor_o_igual N.
+        M igual Elemento I de ChatMensajes.
+        CmpVacio igual SrvStrIcmp M y "".
+        en_caso_de_que CmpVacio es_distinto_de 0.
+            SrvWrite Cliente y M.
+            SrvSendNl Cliente.
+        fin.
+        I igual I mas 1.
+    fin.
+fin.
+
+funcion GuardarChat.
+    SrvMkdir "data".
+    crear "data/chat.db".
+    N igual Longitud de ChatMensajes.
+    I igual 1.
+    mientras I es_menor_o_igual N.
+        M igual Elemento I de ChatMensajes.
+        CmpVacio2 igual SrvStrIcmp M y "".
+        en_caso_de_que CmpVacio2 es_distinto_de 0.
+            escribir M.
+        fin.
+        I igual I mas 1.
+    fin.
+    cerrar.
+fin.
+
+funcion CargarChat.
+    Existe igual SrvFileExists "data/chat.db".
+    en_caso_de_que Existe es_igual_a 0.
+        devolver 0.
+    fin.
+    mientras Longitud de ChatMensajes es_mayor_que 0.
+        Quitar primero de ChatMensajes.
+    fin.
+    abrir "data/chat.db".
+    Linea igual "".
+    leer Linea.
+    mientras Linea es_distinto_de "".
+        Agregar Linea a ChatMensajes.
+        leer Linea.
+    fin.
+    cerrar.
+fin.
+
+funcion ManejarCliente Cliente como entero.
+    Buffer igual SrvReadStr Cliente.
+    
+    mostrar ">> Peticion recibida".
+    RutaLog igual SrvGetPath Buffer.
+    mostrar RutaLog.
+    
+    EsOpt igual SrvIsOptions Buffer.
+    en_caso_de_que EsOpt es_igual_a 1.
+        SrvCorsPreflight Cliente.
+        SrvClose Cliente.
+        devolver 0.
+    fin.
+    
+    Ruta igual SrvGetPath Buffer.
+    
+    EsRoot igual SrvStrIcmp Ruta y "/".
+    en_caso_de_que EsRoot es_igual_a 0.
+        Html igual SrvReadFile "index.html".
+        SrvRespondHtml Cliente y Html.
+        SrvClose Cliente.
+        devolver 0.
+    fin.
+    
+    EsLogin igual StrFind Ruta y "/login".
+    en_caso_de_que EsLogin es_mayor_o_igual 0.
+        ManejarLogin Cliente y Buffer.
+        SrvClose Cliente.
+        devolver 0.
+    fin.
+    
+    EsSaldo igual StrFind Ruta y "/saldo".
+    en_caso_de_que EsSaldo es_mayor_o_igual 0.
+        ManejarSaldo Cliente y Buffer.
+        SrvClose Cliente.
+        devolver 0.
+    fin.
+    
+    EsMinar igual StrFind Ruta y "/minar".
+    en_caso_de_que EsMinar es_mayor_o_igual 0.
+        ManejarMinar Cliente y Buffer.
+        SrvClose Cliente.
+        devolver 0.
+    fin.
+    
+    EsComprar igual StrFind Ruta y "/comprar".
+    en_caso_de_que EsComprar es_mayor_o_igual 0.
+        ManejarComprar Cliente y Buffer.
+        SrvClose Cliente.
+        devolver 0.
+    fin.
+    
+    EsRegistro igual StrFind Ruta y "/registro".
+    en_caso_de_que EsRegistro es_mayor_o_igual 0.
+        ManejarRegistro Cliente y Buffer.
+        SrvClose Cliente.
+        devolver 0.
+    fin.
+    
+    EsChatEnviar igual StrFind Ruta y "/chat/send".
+    en_caso_de_que EsChatEnviar es_mayor_o_igual 0.
+        ManejarChatEnviar Cliente y Buffer.
+        SrvClose Cliente.
+        devolver 0.
+    fin.
+    
+    EsChatMsgs igual StrFind Ruta y "/chat/messages".
+    en_caso_de_que EsChatMsgs es_mayor_o_igual 0.
+        ManejarChatMensajes Cliente y Buffer.
+        SrvClose Cliente.
+        devolver 0.
+    fin.
+    
+    SrvRespond Cliente y "ERR:no_encontrado".
+    SrvClose Cliente.
+    devolver 0.
+fin.
+
+mostrar "=== Servidor Agmine Coin (100% Coma) ===".
+mostrar "Inicializando cuentas...".
+
+ExisteDB igual SrvFileExists "data/accounts.db".
+en_caso_de_que ExisteDB es_igual_a 1.
+    CargarCuentas.
+    CargarChat.
+sino.
+    Elemento 1 de ClavesHash igual StrHash "admin123".
+    Elemento 2 de ClavesHash igual StrHash "clave123".
+    Elemento 3 de ClavesHash igual StrHash "pass456".
+    Elemento 4 de ClavesHash igual StrHash "abc789".
+    Elemento 5 de ClavesHash igual StrHash "xyz321".
+    GuardarCuentas.
+    mostrar "Cuentas por defecto creadas".
+fin.
+
+CargarChat.
+
+Ncuentas igual Longitud de Usuarios.
+mostrar "Cuentas listas:".
+mostrar Ncuentas.
+mostrar "admin / admin123 (saldo: 5000)".
+mostrar "juan / clave123 (saldo: 2500)".
+mostrar "maria / pass456 (saldo: 1000)".
+mostrar "carlos / abc789 (saldo: 3000)".
+mostrar "ana / xyz321 (saldo: 750)".
+
+Puerto igual 8080.
+mostrar "Servidor escuchando en http://localhost:8080 (multihilo)".
+mostrar "Abre http://localhost:8080 en tu navegador".
+
+Datadir igual "data".
+mostrar "Datos en:".
+mostrar "data".
+
+Servidor igual SrvStart Puerto.
+mientras verdad.
+    Cliente igual SrvAccept Servidor.
+    en_caso_de_que Cliente es_mayor_que 0.
+        ManejarCliente Cliente.
+    fin.
+fin.

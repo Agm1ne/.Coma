@@ -1,0 +1,5 @@
+| syntax_ok_012.por_cada.coma — Iteración por_cada
+Numeros Igual Lista 10 Y 20 Y 30.
+Por_Cada N En Numeros.
+    Mostrar N.
+Fin.

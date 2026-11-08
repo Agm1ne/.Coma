@@ -1,0 +1,8 @@
+| edge_cases_015.anidamiento_if.coma — Anidamiento de if
+X Igual 5.
+Y Igual 10.
+En_Caso_De_Que X Es_Mayor_Que 3.
+    En_Caso_De_Que Y Es_Mayor_Que 5.
+        Mostrar "Ambos verdaderos."
+    Fin.
+Fin.

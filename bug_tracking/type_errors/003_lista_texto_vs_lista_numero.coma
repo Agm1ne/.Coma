@@ -1,0 +1,6 @@
+| type_errors_003.lista_texto_vs_lista_numero.coma — Lista texto vs lista número
+L1 Igual Lista "A" Y "B".
+L2 Igual Lista 1 Y 2.
+En_Caso_De_Que L1 Es_Igual_A L2.
+    Mostrar "Igual."
+Fin.

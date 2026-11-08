@@ -1,0 +1,10 @@
+La Saludo igual "Hola".
+El Nombre igual "Mundo".
+La Frase igual La Saludo y " " y El Nombre y "!".
+mostrar La Frase.
+Los Numeros igual lista 1 y 2 y 3.
+La Suma igual "La suma es: ".
+mostrar La Suma.
+mostrar elemento 1 de Los Numeros.
+mostrar elemento 2 de Los Numeros.
+mostrar elemento 3 de Los Numeros.

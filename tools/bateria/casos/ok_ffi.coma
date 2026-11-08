@@ -1,0 +1,5 @@
+function external MiFunc as numero.
+show "ok".
+
+
+

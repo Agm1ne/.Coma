@@ -105,6 +105,8 @@ proc foldNode(n: Node): Node =
       return Node(kind: nkBool, line: n.line, col: n.col, typ: dtBool,
                   intVal: (if n.left.intVal == 0: 1 else: 0))
     return n
+  of nkPointerDecl:
+    return n
   else:
     # Recursión genérica: expresiones hijas primero.
     if n.left != nil: n.left = foldNode(n.left)
@@ -137,6 +139,8 @@ proc substIds(n: Node, env: seq[tuple[name: string, val: Node]]) =
         return
   of nkFuncDecl:
     return # otro ámbito: ni mirar
+  of nkPointerDecl:
+    return # no sustituir el ident (necesario para direccion de X)
   else: discard
   if n.left != nil: substIds(n.left, env)
   if n.right != nil: substIds(n.right, env)

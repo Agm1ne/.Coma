@@ -1,0 +1,9 @@
+N is 3.
+switch N.
+case 3.
+show "tres".
+default.
+show "default".
+end.
+end.
+

@@ -1,0 +1,6 @@
+| edge_cases_020.variable_global_en_funcion.coma — Variable global en función
+GlobalVar Igual 10.
+Funcion LeerGlobal.
+    Mostrar GlobalVar.
+Fin.
+LeerGlobal.

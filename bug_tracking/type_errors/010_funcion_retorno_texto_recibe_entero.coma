@@ -1,0 +1,5 @@
+| type_errors_010.funcion_retorno_texto_recibe_entero.coma — Función texto recibe entero
+Funcion Saludar Nombre Como Entero Como Texto.
+    Devolver "Hola."
+Fin.
+Mostrar Saludar 5.

@@ -1,0 +1,5 @@
+| syntax_ok_022.tick.coma — Bucle tick
+Tick 60.
+    Contador Igual Contador Mas 1.
+    Mostrar Contador.
+Fin.

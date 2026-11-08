@@ -1,0 +1,4 @@
+| type_errors_005.registro_campo_texto_vs_entero.coma — Campo registro texto vs entero
+G Igual Lista Registro Vida 100.
+Elemento 1 De G Vida Igual "texto."
+Mostrar Elemento 1 De G Vida.

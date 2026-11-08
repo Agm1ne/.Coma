@@ -234,7 +234,7 @@ void coma_pedir(char **dst) {
     }
     raw_temp_on();
     strip_nl(p);
-    free(*dst);
+    if (*dst) free(*dst);
     *dst = p;
 }
 
@@ -292,14 +292,16 @@ void coma_str_assign(char **dst, const char *src) {
     if (!p) exit(1);
     if (src) memcpy(p, src, n);
     else p[0] = 0;
-    free(*dst);
+    if (*dst) free(*dst);
     *dst = p;
 }
 
 void coma_str_free(char *p) { free(p); }
 
 static void e101(void) {
-    printf("E101 indice fuera de rango\n");
+    printf("E101 indice fuera de rango");
+    coma_einfo();
+    printf("\n");
     fflush(stdout);
     exit(1);
 }

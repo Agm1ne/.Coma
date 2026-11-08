@@ -1,0 +1,9 @@
+La I igual 0.
+mientras La I es_menor_que 5.
+    mostrar La I.
+    La I igual La I mas 1.
+fin.
+Los Numeros igual lista 10 y 20 y 30.
+por_cada La N en Los Numeros.
+    mostrar La N.
+fin.

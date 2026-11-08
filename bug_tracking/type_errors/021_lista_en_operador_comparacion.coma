@@ -1,0 +1,6 @@
+| type_errors_021.lista_en_operador_comparacion.coma — Lista en operador comparación
+L1 Igual Lista 1 Y 2.
+L2 Igual Lista 3 Y 4.
+En_Caso_De_Que L1 Es_Mayor_Que L2.
+    Mostrar "Mayor."
+Fin.

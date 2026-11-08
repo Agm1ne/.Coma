@@ -1,0 +1,9 @@
+| syntax_ok_020.recursividad.coma — Función recursiva
+Funcion Factorial N.
+    En_Caso_De_Que N Es_Menor_O_Igual 1.
+        Devolver 1.
+    Sino.
+        Devolver N Por Factorial N Menos 1.
+    Fin.
+Fin.
+Mostrar Factorial 5.

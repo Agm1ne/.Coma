@@ -1,0 +1,18 @@
+funcion The Sumar A y B.
+    devolver A mas B.
+fin.
+funcion La Restar A y B.
+    devolver A menos B.
+fin.
+funcion The Multiplicar A y B.
+    devolver A por B.
+fin.
+The R1 igual The Sumar 10 y 5.
+La R2 igual La Restar The R1 y 3.
+The R3 igual The Multiplicar La R2 y 2.
+mostrar "R1:".
+mostrar The R1.
+mostrar "R2:".
+mostrar La R2.
+mostrar "R3:".
+mostrar The R3.

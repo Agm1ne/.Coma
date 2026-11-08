@@ -1,0 +1,9 @@
+| syntax_ok_021.operadores_bit.coma — Operadores de bits
+A Igual 5 Y_Bit 3.
+B Igual 5 O_Bit 3.
+C Igual 5 Xor 3.
+D Igual 1 Desplaza_Izquierda 2.
+Mostrar A.
+Mostrar B.
+Mostrar C.
+Mostrar D.

@@ -1,0 +1,7 @@
+lista_texto igual lista "hola" y "mundo" y "Coma".
+mostrar lista_texto.
+mostrar Elemento 1 de lista_texto.
+mostrar Elemento 2 de lista_texto.
+mostrar Elemento 3 de lista_texto.
+Agregar "!" a lista_texto.
+mostrar Elemento 4 de lista_texto.

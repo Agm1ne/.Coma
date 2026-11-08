@@ -1,0 +1,5 @@
+| syntax_ok_002.variables.coma — Variables y asignación
+X Igual 42.
+Y Igual X Mas 10.
+Mostrar X.
+Mostrar Y.

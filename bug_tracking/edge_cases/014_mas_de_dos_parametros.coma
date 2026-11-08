@@ -1,0 +1,5 @@
+| edge_cases_014.mas_de_dos_parametros.coma — Más de dos parámetros
+Funcion SumarTres A Y B Y C.
+    Devolver A Mas B Mas C.
+Fin.
+Mostrar SumarTres 1 Y 2 Y 3.

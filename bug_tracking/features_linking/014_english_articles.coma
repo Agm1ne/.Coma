@@ -1,0 +1,12 @@
+funcion The Sum A and B.
+    return A plus B.
+fin.
+funcion The Double X.
+    return X times 2.
+fin.
+The Result igual The Sum 5 and 3.
+The Doubled igual The Double The Result.
+mostrar "Result:".
+mostrar The Result.
+mostrar "Doubled:".
+mostrar The Doubled.

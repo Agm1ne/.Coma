@@ -1,8 +1,23 @@
 COMA.. — ESPECIFICACIÓN DEL LENGUAJE (documento vivo)
 =====================================================
-Filosofía: destruir C, ergonomía de prosa.
+Filosofía: destruir C, ergonomía de prosa. Lenguaje de USO GENERAL.
 Nombre: .Coma (punto y coma: lo que el lenguaje reemplaza).
 Leyenda: [OK] decidido · [?] propuesto, vetable.
+
+CAPACIDADES REALES (no es scripting de consola):
+- Gráficos 2D: ventana Win32 nativa + OpenGL 3.3, framebuffer software, rectángulos, círculos, líneas, sprites BMP, fuente bitmap 8x8, ratón y teclado. [OK]
+- Audio: exporta WAV (RIFF PCM 16-bit), MP3 (MPEG-1 Layer I), OGG (OggPCM) desde listas de enteros. [OK]
+- GPU compute: ejecución por CPU (single-source, in-place out[i] = in[i] + 1), comandos iniciar/programa/ejecutar/terminar. [OK]
+- Red TCP: cliente con getaddrinfo + timeout. Servidor HTTP completo (coma_srv_start/accept/read/write/close, coma_http_serve, CORS, hash FNV-1a). [OK]
+- HTTPS: handshake TLS real con Schannel (Windows), validación de certificados, hasta 3 saltos HTTP, GET y POST. [OK]
+- Hilos y paralelismo: hilos detached, actores (64 con buzones ring), canales thread-safe, try/catch con setjmp/longjmp, futuro, select, segundo_plano, lanzar. [OK]
+- FFI completa: funcion externa ... alias "mi_funcion" usando cc. vincular "libreria". Convenciones cdecl/stdcall/winapi/fastcall. Tipos: entero, decimal, texto, lista, lista_texto, lista_lista, registro, asa. [OK]
+- Ficheros: abrir/crear/leer Linea./escribir X./cerrar./eliminar "f". Sesión única, autocierra vía atexit. [OK]
+- JSON: parser recursivo (objeto/array/str/num/bool/null), get/set, serialize. [OK]
+- CSV: parser con campos comillados, filas/cols/celda. [OK]
+- Teclado y mando: Tecla (sondeo en tiempo real, flechas→wasd), Mando (XInput/winmm/evdev para gamepad/guitarra GH). [OK]
+- Sistema: Hora, Fecha, Usuario, Sistema, Version, Directorio (presets de solo lectura). [OK]
+- Compilación nativa: LLVM IR + zig cc → binarios Windows x64 y Unix. [OK]
 
 1. NOMBRES
 - Variables y funciones: inicial mayúscula, Unicode (eñes, tildes, Ñ, Á). Normalización NFC. Se demuestra: Daño_total, Suma_daño, Precio_poción. [OK]
@@ -44,8 +59,7 @@ Leyenda: [OK] decidido · [?] propuesto, vetable.
 - pedir X. y la X de por_cada valen como asignación (actualizan o declaran;
   la de por_cada queda con el último valor). [OK]
 - Globales (nivel archivo): visibles en todas partes y tocables desde funciones.
-  En Coma.. NO existen public/private: todo lo visible es público (filosofía
-  "todos son vagos"). Sin muros, los avisos de typos cargan la seguridad. [OK]
+  En Coma.. `publica`/`public` y `privada`/`private` antes de `funcion` controlan visibilidad entre módulos: las públicas se manglan y se exportan, las privadas solo son visibles dentro de su módulo. Filosofía "todos son vagos" dentro de un módulo: sin muros internos, los avisos de typos cargan la seguridad. [OK Fase 4]
 - Recursión propia OK; firmas recogidas antes de usar (orden libre en el
   archivo, recursión mutua OK). [OK]
 - IDs de bloque: NO existen en v1 para el programador. El compilador numera
@@ -119,7 +133,7 @@ Leyenda: [OK] decidido · [?] propuesto, vetable.
 - Escribir: Poner 80 en Vida de J. = Vida de J igual 80. = J.Vida igual 80. (EN put in/of/from). [OK]
 - Esquema CERRADO v1: campo inexistente = E005 + sugerencia (lectura, escritura y Poner); repetido = E005; entero (mostrar/pedir/igual) = E202. Añadir campos nuevos no existe: se crea otro registro. [OK]
 - Campos tipados (primera escritura manda: entero/decimal/texto); leer campo texto a variable adopta texto (antes truncaba un puntero en silencio). [OK]
-- LÍMITE HONESTO v1: campos = variables `J.Campo` (siempre escribibles, anchos por campo); declara antes de usar; el renglón suelto como valor sigue en E201; registros ni como arg ni retorno (E202); registros en funciones siguen compartidos (son entidades, como Agmine).
+- LÍMITE HONESTO v1: campos = variables `J.Campo` (siempre escribibles, anchos por campo); declara antes de usar; el renglón suelto como valor sigue en E201; registros sueltos (loose records) no cruzan funciones (E202, usar lista de registros); listas de registros pasan por referencia (sin copia profunda); registros en funciones siguen compartidos (son entidades, como Agmine).
 
 13. TIPOS (inferencia en compilación)
 - Entero: ancho = máximo de todas sus asignaciones (25 -> i8). Ramas: máximo. Bucle sin cota demostrable: i64 + aviso. [OK idea]
@@ -207,18 +221,30 @@ Leyenda: [OK] decidido · [?] propuesto, vetable.
 - Recarga caliente: los punteros mueren con ella; usarlos después = error E104 humano (créalos de nuevo). [OK]
 - Corona: lo apuntado pasa a aliasable; TODO LO DEMÁS conserva noalias (C es aliasable en todas partes por defecto: seguimos ganando). [OK]
 
-18. MÓDULOS TRAER (dentro de Coma, cero dependencias)
-- `traer Guitarra.` importa coma/lib/guitarra.coma (o junto al fuente): entran sus `funcion`/`registro`, el código suelto no se ejecuta al importar. Recursivo, anti-ciclos, orden libre total (dos pasadas: firmas de todos antes que cuerpos). Repetido = se ignora; colisión de firmas = E003; ausente = E001 con ruta. [OK]
+18. MÓDULOS TRAER (dentro de Coma, cero dependencias) [OK Fase 4]
+- `traer Guitarra.` importa coma/lib/guitarra.coma (o junto al fuente). `traer std.io.` o `traer std/io.` importa con namespace (punto o barra como separador). [OK]
+- Entran sus `funcion`/`registro` públicos; el código suelto no se ejecuta al importar. Recursivo, anti-ciclos, orden libre total (dos pasadas: firmas de todos antes que cuerpos). Repetido = se ignora; colisión de firmas públicas = E003; ausente = E001 con ruta. [OK]
 - Llamadas sin argumentos: `Verde.` / `Verde y Roja.` valen si la firma existe (pre-escaneo; si no, es variable como siempre). Sin esto las librerías no se podían usar. [OK]
 - Firma propia: `Agmine.` imprime `creado por Agmine` y devuelve 0 (vale en cualquier sitio, sin declarar; solo se emite si se usa). [OK]
 - Librerías dentro del lenguaje: coma/lib/mando.coma (BotonA/B, cruz, Start, AlgunBoton) y coma/lib/guitarra.coma (Verde, Roja, Amarilla, Azul, Naranja, Pua, Palanca, Acorde). Demo: coma/ejemplos/trae.coma. [OK]
-- Mangle: cada función de módulo vive como modulo__F (conviven homónimos; el main manda en local; dos módulos iguales = ambiguo honesto). Sin mangle no hay ecosistema. [OK]
+- Mangle: cada función pública de módulo vive como modulo__F (conviven homónimos; el main manda en local; dos módulos iguales = ambiguo honesto). Funciones privadas (prefijadas con `privada`/`private`) no se manglan: solo visibles dentro de su módulo. Sin mangle no hay ecosistema. [OK]
 - Sin topes de datos: texto y listas en heap con free (sin 256/64); listas como arg (copia) y retorno (copia); registros con campos tipados; pedir numérico con E103; cambio de tipo decidido (E202); tick con FIFO y teclado evdev real en Linux. [OK]
 - LÍMITE HONESTO v1: sin mangle (un nombre = una firma en todo el programa); el estado del módulo son los globals del programa; `usar` (FFI a C) sigue abierto.
 
 18b. ABIERTO (sin decidir) + RECHAZADO
-- Formateador, Closures (captura de verdad). Tick cuadros/engine (Actualizar por frame), pedir no bloqueante. Args CLI. Renglón de registro como valor.
+- Formateador. Tick cuadros/engine (Actualizar por frame), pedir no bloqueante. Args CLI. Renglón de registro como valor.
 - usar/FFI a C: RECHAZADO por filosofía (competimos, no nos apoyamos). Todo entra por coma/lib o primitivas propias.
+
+18c. FUNCION EXTERNA (TEMPORAL — POR MIENTRAS, DESAPARECERÁ) [OK Fase 6]
+- `funcion externa Nombre como Tipo alias "simbolo" usando cc.` declara una función externa sin cuerpo. Genera LLVM `declare`, no `define`.
+- `funcion externa Nombre como Tipo vincular "libreria".` declara y enlaza con la librería indicada (`-l<libreria>` en el enlazador). `vincular` y `link` son sinónimos. [OK Fase 6]
+- Convenciones de llamada válidas: `cdecl`, `stdcall`, `winapi`, `fastcall`. Default: `cdecl`.
+- `alias` es opcional; si se omite, el símbolo externo es `sanitize(Nombre)`.
+- Tipos soportados: `entero`, `decimal`, `texto`, `lista`, `lista_texto`, `lista_lista`, `registro`, `asa`.
+- `cc` inválido → E001 "convencion de llamada desconocida". Nombre no mayúscula → E001.
+- Ejemplo: `funcion externa MiFunc X como entero alias "mi_func" usando cdecl.`
+- LLAMA como función normal: `mostrar MiFunc 5.`
+- NOTA: esto es un parche temporal; se eliminará en favor de módulos `traer` puros en Coma.
 
 19. TICKS Y DELTA
 - `tick 60.` ... `fin.` = bucle a N ticks/segundo (tasa entera positiva). `tick cuadros.`/`tick frames.` = al ritmo del motor: SOLO bajo Agmine, en standalone es E202. [OK]
@@ -311,4 +337,54 @@ Leyenda: [OK] decidido · [?] propuesto, vetable.
 - Editor + LSP en tiempo real (diagnósticos de verdad vía coma.exe --ir, clic para ir a la línea) + recuadro del diccionario ES/EN con buscador + salida + botón `Guardar diario` (sesion-fecha.log con código, problemas y salida). Se compila con build.bat (csc del sistema). [OK]
 - Autocompletado 100% visual (v0.5): panel hijo que nunca roba el foco ni acepta clics, solo muestra las que coinciden; escribir es totalmente natural y SOLO Tab elige (completa la primera), Enter sigue siendo Enter, Esc cierra. Con prueba automática (--uitest) y verificación en ventana real. [OK]
 - Ejecutar sin esperas ciegas: salida del compilador línea por línea en vivo, compilación rápida (--opt:0), revisiones LSP serializadas (no se apilan); si el programa es juego (tick/tecla/mando) se abre en su propia ventana jugable, si no se ejecuta con captura y tope de 15 s. [OK]
-- coma/tools/ide/coma-ide.html v0.2 queda como versión web de respaldo (mismo diccionario y diario). coma/tools/ide/coma-lint.js al día (red, comprobar, bits, equivalente, artículos). [OK]
+- coma/tools/ide/coma-ide.html v0.2 queda como versión web de respaldo (mismo diccionario y diario). coma/tools/ide/coma-lint.js al día (red, comprobar, bits, equivalente, artículos).
+
+35. CANALES, FUTUROS Y SELECT (multihilo Fase 5) [OK]
+- `canal crear Nombre.` crea un canal con buzón de 32 ranuras + backpressure (bloquea si está lleno). [OK]
+- `canal enviar X a Nombre.` envía X al canal. Primitivos se copian; listas se transfieren por puntero fantasma (move semantics): el origen queda invalidado y usarlo después da E202 estático. [OK]
+- `canal recibir X de Nombre.` recibe del canal en X. Bloquea si está vacío. [OK]
+- `futuro X = expr.` evalúa expr de forma asíncrona y guarda el resultado en un canal interno llamado X. [OK]
+- `esperar X.` espera a que el futuro X complete y trae su valor. [OK]
+- `select { caso canal recibir X de C. => cuerpo. otro. => cuerpo. }` multiplexa sobre canales: ejecuta el primer caso cuyo canal tenga un mensaje disponible; `otro` es el caso por defecto. [OK]
+- Nota: canales y actores comparten la infraestructura de buzones (ring buffer de 32 ranuras + 3 backups en RAM para depuración). [OK]
+
+36. COMPILACIÓN CONDICIONAL (metaprogramación Fase 7) [OK]
+- `si_compilacion condicion. ... sino_compilacion. ... fin_compilacion.` evalúa la condición en tiempo de compilación y descarta la rama inactiva antes de generar IR. Condiciones reconocidas: `windows`, `linux`, `debug`, `release`. Ejemplo:
+  ```
+  si_compilacion windows.
+      mostrar "en Windows".
+  sino_compilacion.
+      mostrar "en Linux".
+  fin_compilacion.
+  ```
+- La rama inactiva no se compila: no genera errores ni código. Útil para código específico de plataforma sin duplicar archivos. [OK]
+
+37. MÓDULOS CON NAMESPACES Y VISIBILIDAD (Fase 4) [OK]
+- `traer std.io.` importa coma/lib/std/io.coma (separador de namespace con punto o barra). [OK]
+- `publica`/`public` y `privada`/`private` antes de `funcion`: las privadas no se manglan y solo son visibles dentro de su módulo; las públicas se manglan como `modulo__Nombre` y se exportan. [OK]
+- `coma install <paquete>` / `coma publish <paquete>`: gestor de paquetes CLI para instalar/compartir paquetes en coma/lib/. [OK]
+
+38. FFI COMPLETA (Fase 6) [OK]
+- `funcion externa Nombre como Tipo vincular "libreria".` enlaza con la librería indicada (`-l<libreria>` en el enlazador). `vincular`/`link` son sinónimos. [OK]
+- `funcion externa Nombre como Tipo alias "simbolo" usando cc.` mantiene el comportamiento anterior; `alias` opcional, `cc` en {cdecl, stdcall, winapi, fastcall}. [OK]
+
+39. TOOLING (Fase 8) [OK]
+- `coma fmt <archivo.coma>`: formateador (puntos finales en sentencias, consistencia). [OK]
+- `coma lint <archivo.coma>`: linter (puntos faltantes, nombres de función sin mayúscula inicial, problemas comunes). [OK]
+- `coma install <paquete>` / `coma publish <paquete>`: gestor de paquetes. [OK]
+
+40. RUNTIME SEPARADO (CORE vs EXTENSIONS) [OK]
+- `coma_rt.h` = core obligatorio (consola, teclado, archivos, red TCP, hilos, actores, canales, memoria, errores).
+- `coma_rt_ext.h` = extensiones opcionales (ventana, audio, GPU, BMP, fuentes, HTTPS POST/GET).
+- El compilador detecta qué extensiones usa el programa (AST) y enlaza solo los .c necesarios. Un programa sin ventana/audio/GPU no enlaza OpenGL, GDI, etc. [OK]
+
+41. CIERRES / CLOSURES (captura de entorno) [OK v1]
+- Una función anidada puede capturar variables locales de la función que la contiene: `funcion Padre X. Contador igual 0. funcion Hija Y. Contador igual Contador mas Y. devolver Contador. fin. devolver Hija 5. fin.`
+- Las capturadas se elevan a globales compartidas entre padre e hija (una por variable, nombre `@g_Contador`), así padre e hija leen/escriben la misma celda.
+- Limitación honesta v1: no hay entorno separado por invocación (dos llamadas al padre comparten la misma capturada = no es reentrante). Para closures "de verdad" (heap + struct de entorno + puntero a función cerrado) hay que pasar a v2.
+- Las variables capturadas deben ir con mayúscula inicial (`Contador`, no `contador`) para que el parser las reconozca como asignación.
+- Tipos soportados como capturada: entero, decimal, texto. Listas, registros y asas no se capturan en v1 (E202 si se intenta).
+- Una función anidada ve: sus propios parámetros, sus propias locales, las capturadas del padre y las globales.
+- Demo: coma/tools/bateria/casos/ok_closure1.coma (imprime 5). [OK]
+
+ [OK]

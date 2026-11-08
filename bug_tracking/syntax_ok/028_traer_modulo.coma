@@ -1,0 +1,3 @@
+| syntax_ok_028.traer_modulo.coma — Importar módulo
+Traer Std.Io.
+Mostrar "Modulo importado."

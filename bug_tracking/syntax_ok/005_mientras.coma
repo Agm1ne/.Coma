@@ -1,0 +1,6 @@
+| syntax_ok_005.mientras.coma — Bucle mientras
+Contador Igual 0.
+Mientras Contador Es_Menor_Que 5.
+    Mostrar Contador.
+    Contador Igual Contador Mas 1.
+Fin.

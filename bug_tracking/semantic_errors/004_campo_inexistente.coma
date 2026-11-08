@@ -1,0 +1,3 @@
+| semantic_errors_004.campo_inexistente.coma — Campo inexistente en registro
+Persona Igual Registro Nombre "Juan" Y Edad 30.
+Mostrar Elemento 3 De Persona.

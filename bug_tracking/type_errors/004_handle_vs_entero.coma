@@ -1,0 +1,5 @@
+| type_errors_004.handle_vs_entero.coma — Handle vs entero
+P Ip A X.
+En_Caso_De_Que Ip Es_Igual_A 5.
+    Mostrar "Igual."
+Fin.

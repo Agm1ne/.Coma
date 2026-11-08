@@ -1,0 +1,5 @@
+| type_errors_001.entero_vs_decimal.coma — Entero vs decimal en comparación
+X Igual 5.
+En_Caso_De_Que X Es_Igual_A 5,0.
+    Mostrar "Igual."
+Fin.

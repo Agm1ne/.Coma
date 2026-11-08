@@ -1,0 +1,14 @@
+funcion Sumar A y B.
+    devolver A mas B.
+fin.
+funcion Restar A y B.
+    devolver A menos B.
+fin.
+funcion Multiplicar A y B.
+    devolver A por B.
+fin.
+La R1 igual Sumar 10 y 5.
+La R2 igual Restar La R1 y 3.
+La R3 igual Multiplicar La R2 y 2.
+mostrar "Pipeline:".
+mostrar La R3.

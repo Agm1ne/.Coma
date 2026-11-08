@@ -1,0 +1,12 @@
+funcion La Sumar A y B.
+    return A plus B.
+fin.
+funcion The Doble X.
+    devolver X por 2.
+fin.
+La R1 igual La Sumar 3 y 4.
+The R2 igual The Doble La R1.
+mostrar "R1 (ES):".
+mostrar La R1.
+mostrar "R2 (EN):".
+mostrar The R2.

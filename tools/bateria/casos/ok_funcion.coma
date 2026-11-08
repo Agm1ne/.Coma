@@ -1,0 +1,5 @@
+funcion Doblar X.
+    devolver X por 2.
+fin.
+show Doblar 5.
+show Doblar 10.

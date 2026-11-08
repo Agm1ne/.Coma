@@ -1,0 +1,8 @@
+funcion Double X.
+    return X times 2.
+fin.
+funcion Quadruple X.
+    return Double Double X.
+fin.
+mostrar "Quadruple de 5:".
+mostrar Quadruple 5.

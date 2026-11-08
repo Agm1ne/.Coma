@@ -1,0 +1,5 @@
+| semantic_errors_011.argumentos_malos.coma — Número de argumentos incorrecto
+Funcion Sumar A Y B.
+    Devolver A Mas B.
+Fin.
+Mostrar Sumar 5.

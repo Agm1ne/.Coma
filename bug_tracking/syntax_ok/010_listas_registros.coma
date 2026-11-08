@@ -1,0 +1,7 @@
+| syntax_ok_010.listas_registros.coma — Lista de registros |
+G Igual Lista De Registros:
+    Registro Vida 100 y Energia 50.
+    Registro Vida 80 y Energia 30.
+fin.
+Mostrar Vida de elemento 1 de G.
+Mostrar Vida de elemento 2 de G.

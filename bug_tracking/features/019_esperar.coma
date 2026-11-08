@@ -1,0 +1,4 @@
+| features_019.esperar.coma — Esperar
+Mostrar "Esperando 1 segundo..."
+Esperar 1.
+Mostrar "Listo."

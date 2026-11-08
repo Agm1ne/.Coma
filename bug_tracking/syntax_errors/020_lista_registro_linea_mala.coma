@@ -1,0 +1,5 @@
+| syntax_errors_020.lista_registro_linea_mala.coma — Línea mala en lista de registros
+G Igual Lista De Registros:
+    Registro Vida 100.
+    LineaInvalida.
+Fin.

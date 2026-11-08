@@ -1,0 +1,5 @@
+funcion saludo Nombre como texto como texto.
+    devolver "Hola, " y Nombre.
+fin.
+
+mostrar saludo "Mundo".

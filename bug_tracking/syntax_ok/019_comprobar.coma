@@ -1,0 +1,11 @@
+| syntax_ok_019.comprobar.coma — Test automático
+Comprobar "Suma correcta".
+    A Igual 2.
+    B Igual 3.
+    R Igual A Mas B.
+    En_Caso_De_Que R Es_Igual_A 5.
+        Mostrar "Test OK."
+    Sino.
+        Mostrar "Test fallo."
+    Fin.
+Fin.

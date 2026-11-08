@@ -1,0 +1,5 @@
+| semantic_errors_012.tipo_argumento_mal.coma — Tipo de argumento incorrecto
+Funcion EsperaEntero X Como Entero Como Entero.
+    Devolver X.
+Fin.
+Mostrar EsperaEntero "texto."

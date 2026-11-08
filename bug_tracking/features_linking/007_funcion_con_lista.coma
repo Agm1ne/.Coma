@@ -1,0 +1,15 @@
+funcion SumarLista Lista como lista.
+    Total igual 0.
+    I igual 1.
+    N igual longitud de Lista.
+    mientras I es_menor_o_igual N.
+        X igual elemento I de Lista.
+        Total igual Total mas X.
+        I igual I mas 1.
+    fin.
+    devolver Total.
+fin.
+Numeros igual lista 1 y 2 y 3 y 4 y 5.
+La Suma igual SumarLista Numeros.
+mostrar "Suma de lista:".
+mostrar La Suma.

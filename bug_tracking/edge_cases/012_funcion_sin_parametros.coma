@@ -1,0 +1,5 @@
+| edge_cases_012.funcion_sin_parametros.coma — Función sin parámetros
+Funcion Saludar.
+    Devolver "Hola."
+Fin.
+Mostrar Saludar.

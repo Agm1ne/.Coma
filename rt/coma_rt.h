@@ -139,7 +139,11 @@ enum {
    - Linux evdev: BTN_0-4 (o A/B/X/Y/LB) = trastes; BTN_5/6 = púa
      aba/arr; ABS_Z/RZ desviado = whammy. Requiere grupo `input`. */
 
+void coma_einfo(void);
+void coma_finfo(const char* path);
+
 #ifdef __cplusplus
 }
 #endif
+
 #endif

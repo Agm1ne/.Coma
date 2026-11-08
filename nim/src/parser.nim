@@ -87,6 +87,15 @@ proc skipLeadingFiller(p: var Parser) =
       break
     discard p.advance()
 
+proc esIniciadorDeSentencia(val: string): bool =
+  ## Palabras que abren una sentencia estructural: nunca son asignación `X igual Y.`
+  val in ["mostrar", "pedir", "abrir", "crear", "eliminar", "cerrar", "lee", "escribir",
+          "conectar", "enviar", "recibir", "desconectar", "pisa", "en_caso_de_que",
+          "mientras", "tick", "segun", "por_cada", "para", "sigue", "fin", "comprobar",
+          "devolver", "esperar", "limpiar", "lienzo", "marca", "muro", "moneda", "meta",
+          "tablero", "poner", "agregar", "quitar", "funcion", "traer", "registro",
+          "puntero", "gpu", "sino", "otro", "caso", "verdad", "falso", "vacia"]
+
 # Declaración adelantada de expresiones y sentencias
 proc parseExpression*(p: var Parser): Node
 proc parseComparison*(p: var Parser): Node
@@ -168,6 +177,10 @@ proc parsePrimary(p: var Parser): Node =
       discard p.advance()
       let maxNode = p.parseComparison()
       return Node(kind: nkAzar, line: tok.line, col: tok.col, typ: dtInt, left: maxNode)
+    elif tok.val in ["nula", "null", "nil", "none"]:
+      # Nula de asa (FFI): valor opaco nulo, solo vale para asa/direccion.
+      discard p.advance()
+      return Node(kind: nkIdent, line: tok.line, col: tok.col, identName: "nula", typ: dtHandle)
     elif tok.val == "lee":
       # Dos sentidos por forma (como `igual` o `add`): lee X y Y = casilla
       # del tablero; leer Linea. (un nombre) = siguiente línea del fichero.
@@ -694,8 +707,32 @@ proc parseStatement*(p: var Parser): Node =
 
   # 13. Declaración de Función: funcion Nombre A y B. ... fin.
   # Params tipados sin keywords nuevas: `funcion F Texto como texto y N.`
+  # Retorno opcional: `funcion F A como texto como int.` (ultimo como = retorno)
   if tok.kind == tokKeyword and tok.val == "funcion":
     discard p.advance()
+    # `funcion externa F ...` : declaracion FFI (tipo de lista/registro no soportada).
+    if p.peek().kind == tokKeyword and p.peek().val == "externa":
+      discard p.advance() # consumir 'externa'
+      let fnNameTok = p.advance()
+      # Saltar la firma hasta el punto (no se implementan externas en v1).
+      var sawList = false
+      while p.peek().kind != tokDot and p.peek().kind != tokEof:
+        let t = p.advance()
+        if t.val == "list" or t.val == "lista" or t.val == "registro" or t.val == "record":
+          sawList = true
+      discard p.expectDot()
+      if sawList:
+        p.issues.add(Issue(line: tok.line, col: tok.col, code: "E202", level: eError,
+                             msg: "funciones externas no admiten listas o registros",
+                             hint: "usa enteros, decimales o texto en externas"))
+      return nil
+    let nameTok = p.peek()
+    if nameTok.kind != tokIdent:
+      p.issues.add(Issue(line: nameTok.line, col: nameTok.col, code: "E001", level: eError,
+                           msg: "el nombre de la funcion debe ir con mayuscula",
+                           hint: "usa 'Funcion Sumar X.' no 'funcion sumar X.'"))
+      discard p.advance()
+      # seguir para no bloquear el parser
     let fnName = p.advance().val
     var params: seq[string] = @[]
     var paramTyps: seq[DataTypeKind] = @[]
@@ -708,16 +745,22 @@ proc parseStatement*(p: var Parser): Node =
     if p.peek().kind == tokIdent:
       p.takeParam()
       while p.matchKeyword("y"):
-        # `y B como decimal` o fin de params ante el punto
+        # `y B como decimal` o fin de params ante el punto/retorno
         if p.peek().kind == tokIdent:
           p.takeParam()
         else:
           break
+    # Tipo de retorno opcional: `como <tipo>` tras los params (antes del punto)
+    var retTyp: DataTypeKind = dtInt
+    var hasRetTyp = false
+    if p.matchKeyword("como"):
+      retTyp = p.parseTypeWord()
+      hasRetTyp = true
     discard p.expectDot()
     let body = p.parseBlock()
     discard p.matchKeyword("fin")
     discard p.expectDot()
-    return Node(kind: nkFuncDecl, line: tok.line, col: tok.col, funcName: fnName, params: params, paramTyps: paramTyps, thenBlock: body)
+    return Node(kind: nkFuncDecl, line: tok.line, col: tok.col, funcName: fnName, params: params, paramTyps: paramTyps, thenBlock: body, typ: retTyp, hasRetTyp: hasRetTyp)
 
   # 13b. traer Guitarra. (importa coma/lib/guitarra.coma; el driver la resuelve)
   if tok.kind == tokKeyword and tok.val == "traer":
@@ -749,6 +792,32 @@ proc parseStatement*(p: var Parser): Node =
     let origTok = p.advance().val
     discard p.expectDot()
     return Node(kind: nkPointerDecl, line: tok.line, col: tok.col, identName: aliasTok, strVal: origTok)
+
+  # direccion de X: direccion/asador de una variable (FFI, sin implementar plenamente).
+  if tok.kind == tokKeyword and tok.val == "direccion":
+    discard p.advance()
+    discard p.matchKeyword("de")
+    let targetTok = p.advance()
+    discard p.expectDot()
+    return Node(kind: nkDireccion, line: tok.line, col: tok.col, identName: targetTok.val, strVal: targetTok.val)
+
+  # gpu iniciar. / gpu ejecutar D a V. (GPU no implementada en v1).
+  if tok.kind == tokKeyword and tok.val == "gpu":
+    discard p.advance()
+    if p.matchKeyword("iniciar"):
+      discard p.expectDot()
+      return nil
+    elif p.matchKeyword("ejecutar"):
+      let dest = p.parsePrimary()
+      discard p.matchKeyword("a")
+      let val = p.parsePrimary()
+      discard p.expectDot()
+      p.issues.add(Issue(line: tok.line, col: tok.col, code: "E202", level: eError,
+                         msg: "gpu ejecutar no soporta este tipo de destino",
+                         hint: "usa un destino de GPU valido"))
+      return nil
+    discard p.expectDot()
+    return nil
 
   # 16. Asignaciones (sondeo con rebobinado: si no hay `igual` no se
   # consumió nada y cae al fallback de expresión suelta).
@@ -845,6 +914,16 @@ proc parseStatement*(p: var Parser): Node =
       return Node(kind: nkCall, line: varTok.line, col: varTok.col, funcName: varTok.val, args: @[])
     p.pos = savePos
     p.issues.setLen(saveIss)
+
+  # Asignación con nombre minúscula (no reservada): `contador igual 5.`
+  if tok.kind == tokKeyword and not esIniciadorDeSentencia(tok.val) and
+     p.peek(1).kind == tokKeyword and p.peek(1).val == "igual":
+    let varName = tok.val
+    discard p.advance()  # nombre
+    discard p.advance()  # 'igual'
+    let expr = p.parseExpression()
+    discard p.expectDot()
+    return Node(kind: nkAssign, line: tok.line, col: tok.col, identName: varName, left: expr)
 
   # Expresión suelta como sentencia
   let expr = p.parseExpression()

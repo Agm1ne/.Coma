@@ -1,0 +1,42 @@
+﻿| motor.coma: la voz del motor (API C del .exe). |
+| Solo declaraciones: la libreria (AgmineEditor.lib) la pone el motor |
+| al compilar el script. Fuera de Play todo es 0/vacio y avisa. |
+
+funcion externa Agmine_Log Texto como texto como numero.
+funcion externa Agmine_EntityCount como numero.
+funcion externa Agmine_GetX I como numero como decimal.
+funcion externa Agmine_GetY I como numero como decimal.
+funcion externa Agmine_GetZ I como numero como decimal.
+funcion externa Agmine_SetPos I como numero y X como decimal y Y como decimal y Z como decimal como numero.
+funcion externa Agmine_Time como decimal.
+funcion externa Agmine_Input T como texto como numero.
+funcion externa Agmine_CamX como decimal.
+funcion externa Agmine_CamY como decimal.
+funcion externa Agmine_CamZ como decimal.
+funcion externa Agmine_CamSetPos X como decimal y Y como decimal y Z como decimal como numero.
+funcion externa Agmine_CamYaw como decimal.
+funcion externa Agmine_CamPitch como decimal.
+funcion externa Agmine_CamSetRot Yaw como decimal y Pitch como decimal como numero.
+funcion externa Agmine_CamXIdx I como numero como decimal.
+funcion externa Agmine_CamYIdx I como numero como decimal.
+funcion externa Agmine_CamZIdx I como numero como decimal.
+funcion externa Agmine_CamSetPosIdx I como numero y X como decimal y Y como decimal y Z como decimal como numero.
+funcion externa Agmine_CamYawIdx I como numero como decimal.
+funcion externa Agmine_CamPitchIdx I como numero como decimal.
+funcion externa Agmine_CamSetRotIdx I como numero y Yaw como decimal y Pitch como decimal como numero.
+funcion externa Agmine_CamCount como numero.
+funcion externa Agmine_CamSelf como numero.
+funcion externa Agmine_Move I como numero y DX como decimal y DY como decimal y DZ como decimal como numero.
+funcion externa Agmine_Find Nombre como texto como numero.
+funcion externa Agmine_GetRX I como numero como decimal.
+funcion externa Agmine_GetRY I como numero como decimal.
+funcion externa Agmine_GetRZ I como numero como decimal.
+funcion externa Agmine_SetRot I como numero y X como decimal y Y como decimal y Z como decimal como numero.
+funcion externa Agmine_GetNum Clave como texto como decimal.
+funcion externa Agmine_SetNum Clave como texto y V como decimal como numero.
+funcion externa Agmine_GetStr Clave como texto como texto.
+funcion externa Agmine_SetStr Clave como texto y V como texto como numero.
+funcion externa Agmine_GetBool Clave como texto como numero.
+funcion externa Agmine_SetBool Clave como texto y V como numero como numero.
+funcion externa Agmine_CallComaNum Dueno como texto y FN como texto y V como decimal como decimal.
+funcion externa Agmine_CallComaStr Dueno como texto y FN como texto y V como texto como texto.

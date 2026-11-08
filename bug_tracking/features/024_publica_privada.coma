@@ -1,0 +1,8 @@
+| features_024.publica_privada.coma — Visibilidad pública/privada
+Funcion Publica MiFuncionPublica.
+    Devolver 1.
+Fin.
+Funcion Privada MiFuncionPrivada.
+    Devolver 2.
+Fin.
+Mostrar MiFuncionPublica.

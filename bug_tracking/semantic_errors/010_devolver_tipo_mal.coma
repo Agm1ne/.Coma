@@ -1,0 +1,4 @@
+| semantic_errors_010.devolver_tipo_mal.coma — Devolver tipo incorrecto
+Funcion Foo Como Entero Como Texto.
+    Devolver 5.
+Fin.

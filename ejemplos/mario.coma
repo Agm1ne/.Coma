@@ -1,0 +1,8 @@
+marca 10 y 10 con X.
+marca 5 y 5 con O.
+marca 20 y 20 con muro.
+marca 30 y 30 con moneda.
+marca 40 y 40 con meta.
+
+paisaje igual lienzo 40 y 40.
+mostrar paisaje.

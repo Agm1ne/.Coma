@@ -1,0 +1,6 @@
+| semantic_errors_013.lista_en_parametro_primitivo.coma — Lista en parámetro primitivo
+Funcion EsperaEntero X Como Entero Como Entero.
+    Devolver X.
+Fin.
+L Igual Lista 1 Y 2 Y 3.
+Mostrar EsperaEntero L.

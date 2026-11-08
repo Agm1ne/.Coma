@@ -1,0 +1,14 @@
+x igual 0.
+mientras x es_menor_que 10.
+    Tecla igual Tecla.
+    en_caso_de_que Tecla es_igual_a "w".
+        mostrar "Arriba."
+    sino_en_caso_de_que Tecla es_igual_a "s".
+        mostrar "Abajo."
+    sino_en_caso_de_que Tecla es_igual_a "a".
+        mostrar "Izquierda."
+    sino_en_caso_de_que Tecla es_igual_a "d".
+        mostrar "Derecha."
+    fin.
+    x igual x mas 1.
+fin.

@@ -1,0 +1,6 @@
+| syntax_ok_029.si_compilacion.coma — Compilación condicional
+Si_Compilacion Windows.
+    Mostrar "Compilando en Windows."
+Sino_Compilacion.
+    Mostrar "Compilando en otro sistema."
+Fin_Compilacion.

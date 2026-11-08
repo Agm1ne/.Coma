@@ -47,6 +47,7 @@ type
     dtListList,  # lista de listas de int
     dtRecord,    # registro
     dtListRecord # lista de registros
+    dtHandle     # asa/opaco (FFI); solo puntero nula o direccion
 
   NodeKind* = enum
     # Hojas / Literales
@@ -100,6 +101,7 @@ type
     nkListAdd,       # Agregar X a L
     nkListRemove,    # Quitar X de L
     nkPointerDecl,   # puntero Alias a Original
+    nkDireccion,     # direccion de X (direccion/asador de variable)
     nkArchivo,       # abrir/crear/eliminar "ruta" (+cerrar sin nada)
     nkLeerLinea,     # leer Linea (siguiente línea del fichero)
     nkEscribir,      # escribir X (una línea al fichero)
@@ -142,3 +144,9 @@ type
     thenBlock*: Node
     elseBlock*: Node
     label*: string
+    # Tipo de retorno declarado (como <tipo>); dtInt por defecto si no se indica
+    hasRetTyp*: bool
+    # Variables locales del padre capturadas por esta funcion anidada (closure).
+    # Paralelo a capturedTyps. Vacío si no es closure o no captura nada.
+    capturedVars*: seq[string]
+    capturedTyps*: seq[DataTypeKind]

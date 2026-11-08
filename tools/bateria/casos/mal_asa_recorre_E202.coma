@@ -1,0 +1,5 @@
+pointer P to 5.
+for_each E in P.
+    show E.
+end.
+

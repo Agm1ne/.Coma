@@ -1,0 +1,10 @@
+| edge_cases_017.if_dentro_mientras.coma — If dentro de mientras
+X Igual 0.
+Mientras X Es_Menor_Que 5.
+    En_Caso_De_Que X Es_Igual_A 2.
+        Mostrar "Es dos."
+    Sino.
+        Mostrar "No es dos."
+    Fin.
+    X Igual X Mas 1.
+Fin.

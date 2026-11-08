@@ -1,0 +1,10 @@
+funcion factorial N como entero como entero.
+    en_caso_de_que N es_menor_o_igual 1.
+        devolver 1.
+    sino.
+        devolver N por factorial N menos 1.
+    fin.
+fin.
+
+mostrar factorial 5.
+mostrar factorial 10.

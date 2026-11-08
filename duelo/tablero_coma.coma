@@ -1,0 +1,8 @@
+| duelo — Benchmark 3: Tablero |
+Lienzo 40 y 40.
+Marca 10 y 10 con X.
+Marca 20 y 20 con O.
+Marca 5 y 5 con Muro.
+Marca 35 y 35 con Moneda.
+Marca 30 y 30 con Meta.
+Mostrar "Tablero renderizado.".

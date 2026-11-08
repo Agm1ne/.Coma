@@ -1,0 +1,16 @@
+| syntax_ok_030.pipeline_completo.coma — Pipeline completo de características
+Funcion CalcularPromedio Lista.
+    Suma Igual 0.
+    N Igual Longitud De Lista.
+    I Igual 1.
+    Mientras I Es_Menor_O_Igual N.
+        Suma Igual Suma Mas Elemento I De Lista.
+        I Igual I Mas 1.
+    Fin.
+    Devolver Suma Entre N.
+Fin.
+
+Numeros Igual Lista 10 Y 20 Y 30 Y 40 Y 50.
+Promedio Igual CalcularPromedio Numeros.
+Mostrar "Promedio:".
+Mostrar Promedio.

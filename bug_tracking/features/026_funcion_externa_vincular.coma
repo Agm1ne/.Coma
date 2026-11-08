@@ -1,0 +1,3 @@
+| features_026.funcion_externa_vincular.coma — Función externa con vincular
+Funcion Externa MiFuncion X Como Entero Como Entero Alias "mi_funcion" Usando Cdecl Vincular "milib.dll".
+MiFuncion 5.

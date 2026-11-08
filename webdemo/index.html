@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Agmine Coin - Demo</title>
+<style>
+body{font-family:sans-serif;background:#111;color:#eee;margin:0;padding:20px}
+h1{color:#0f0}
+.card{background:#222;padding:16px;margin:12px 0;border-radius:8px}
+button{padding:8px 16px;margin:4px;cursor:pointer}
+input{padding:6px;margin:4px}
+table{width:100%;border-collapse:collapse}
+td,th{border:1px solid #444;padding:6px}
+.status{color:#ff0}
+</style>
+</head>
+<body>
+<h1>Agmine Coin - Moneda Infinita (Demo)</h1>
+<p class="status">Servidor: <span id="srvstatus">conectando...</span></p>
+<div class="card">
+  <h2>Registro / Login</h2>
+  <input id="user" placeholder="usuario">
+  <input id="pass" type="password" placeholder="clave">
+  <button onclick="registrar()">Registrar</button>
+  <button onclick="login()">Login</button>
+  <span id="authmsg"></span>
+</div>
+<div class="card">
+  <h2>Billetera</h2>
+  <p>Saldo: <b id="saldo">0</b> AgmineCoin (infinito)</p>
+  <button onclick="minar()">Minar (gratis)</button>
+  <button onclick="actualizarSaldo()">Actualizar Saldo</button>
+</div>
+<div class="card">
+  <h2>Tienda Falsa</h2>
+  <table>
+    <tr><th>Item</th><th>Precio</th><th></th></tr>
+    <tr><td>Cohete</td><td>100</td><td><button onclick="comprar('Cohete',100)">Comprar</button></td></tr>
+    <tr><td>Castillo</td><td>500</td><td><button onclick="comprar('Castillo',500)">Comprar</button></td></tr>
+    <tr><td>Planeta</td><td>1000</td><td><button onclick="comprar('Planeta',1000)">Comprar</button></td></tr>
+  </table>
+</div>
+<div class="card">
+  <h2>Historial</h2>
+  <ul id="hist"></ul>
+</div>
+<div class="card">
+  <h2>Chat (Hamachi)</h2>
+  <input id="chatmsg" placeholder="mensaje">
+  <button onclick="enviarChat()">Enviar</button>
+  <ul id="chatlog"></ul>
+</div>
+<script>
+const SERVER = '';
+let saldo = 0, usuario = null, token = null, historial = [];
+
+function parseResp(text) {
+  // Remove trailing literal \n
+  return text.trim();
+}
+
+async function post(path, body) {
+  const res = await fetch(SERVER + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body
+  });
+  const text = await res.text();
+  return parseResp(text);
+}
+
+async function registrar() {
+  const u = document.getElementById('user').value;
+  const p = document.getElementById('pass').value;
+  const r = await post('/registro', 'usu=' + encodeURIComponent(u) + '&clave=' + encodeURIComponent(p));
+  document.getElementById('authmsg').textContent = r;
+  if (r.startsWith('OK')) { usuario = u; hist('Registrado: ' + u); }
+}
+
+async function login() {
+  const u = document.getElementById('user').value;
+  const p = document.getElementById('pass').value;
+  const r = await post('/login', 'usu=' + encodeURIComponent(u) + '&clave=' + encodeURIComponent(p));
+  document.getElementById('authmsg').textContent = r;
+  if (r.startsWith('OK')) {
+    const parts = r.split(':');
+    usuario = u;
+    saldo = parseInt(parts[2]);
+    token = parts[3];
+    hist('Login OK: ' + u + ' (saldo: ' + saldo + ')');
+    actualizar();
+  } else if (r.startsWith('ERR:bloqueada')) {
+    hist('Cuenta bloqueada por intentos fallidos');
+  } else {
+    hist('Login fallido');
+  }
+}
+
+async function minar() {
+  if (!usuario) { hist('Debes iniciar sesion primero'); return; }
+  const r = await post('/minar', 'usu=' + encodeURIComponent(usuario));
+  if (r.startsWith('OK')) {
+    saldo = parseInt(r.split(':')[1]);
+    hist('Minado +1000 -> saldo: ' + saldo);
+    actualizar();
+  } else {
+    hist('Error al minar: ' + r);
+  }
+}
+
+async function comprar(item, precio) {
+  if (!usuario) { hist('Debes iniciar sesion primero'); return; }
+  const r = await post('/comprar', 'usu=' + encodeURIComponent(usuario) + '&precio=' + precio);
+  if (r.startsWith('OK')) {
+    saldo = parseInt(r.split(':')[1]);
+    hist('Comprado ' + item + ' -' + precio + ' -> saldo: ' + saldo);
+    actualizar();
+  } else if (r.startsWith('ERR:insuficiente')) {
+    hist('Saldo insuficiente para ' + item);
+  } else {
+    hist('Error al comprar: ' + r);
+  }
+}
+
+async function actualizarSaldo() {
+  if (!usuario) { hist('Debes iniciar sesion primero'); return; }
+  const r = await post('/saldo', 'usu=' + encodeURIComponent(usuario));
+  if (r.startsWith('SALDO')) {
+    saldo = parseInt(r.split(':')[1]);
+    actualizar();
+    hist('Saldo actualizado: ' + saldo);
+  }
+}
+
+function actualizar() {
+  document.getElementById('saldo').textContent = saldo;
+}
+
+function hist(t) {
+  historial.push(t);
+  const li = document.createElement('li');
+  li.textContent = t;
+  document.getElementById('hist').appendChild(li);
+}
+
+async function enviarChat() {
+  const m = document.getElementById('chatmsg').value;
+  if (!m.trim()) return;
+  const u = usuario || 'anon';
+  await post('/chat/send', 'usu=' + encodeURIComponent(u) + '&msg=' + encodeURIComponent(m));
+  document.getElementById('chatmsg').value = '';
+  await cargarChat();
+}
+
+async function cargarChat() {
+  const r = await post('/chat/messages', '');
+  const log = document.getElementById('chatlog');
+  log.innerHTML = '';
+  if (r && !r.startsWith('ERR')) {
+    r.split('\n').forEach(line => {
+      if (line.trim()) {
+        const li = document.createElement('li');
+        li.textContent = line;
+        log.appendChild(li);
+      }
+    });
+  }
+}
+
+setInterval(cargarChat, 3000);
+cargarChat();
+
+// Check server status
+fetch(SERVER + '/')
+  .then(r => { document.getElementById('srvstatus').textContent = 'conectado'; document.getElementById('srvstatus').style.color = '#0f0'; })
+  .catch(e => { document.getElementById('srvstatus').textContent = 'desconectado (inicia servidor.exe)'; document.getElementById('srvstatus').style.color = '#f00'; console.error(e); });
+</script>
+</body>
+</html>
+

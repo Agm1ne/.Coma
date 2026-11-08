@@ -1,0 +1,5 @@
+| semantic_errors_020.por_cada_no_lista.coma — Por cada sobre no-lista
+X Igual 5.
+Por_Cada N En X.
+    Mostrar N.
+Fin.

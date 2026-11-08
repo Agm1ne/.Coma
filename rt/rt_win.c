@@ -1,3 +1,4 @@
+void coma_einfo(void);
 /* rt_win.c — runtime .Coma para Windows (todo por carga dinámica: sin .lib extra). */
 #include "coma_rt.h"
 #include <windows.h>
@@ -138,7 +139,7 @@ void coma_pedir(char **dst) {
         if (done) break;
     }
     strip_nl(p);
-    free(*dst);
+    if (*dst) free(*dst);
     *dst = p;
 }
 
@@ -185,14 +186,16 @@ void coma_str_assign(char **dst, const char *src) {
     if (!p) exit(1);
     if (src) memcpy(p, src, n);
     else p[0] = 0;
-    free(*dst);
+    if (*dst) free(*dst);
     *dst = p;
 }
 
 void coma_str_free(char *p) { free(p); }
 
 static void e101(void) {
-    printf("E101 indice fuera de rango\n");
+    printf("E101 indice fuera de rango");
+    coma_einfo();
+    printf("\n");
     fflush(stdout);
     exit(1);
 }
@@ -740,4 +743,31 @@ int coma_stricmp(const char *a, const char *b) {
     if (!a) a = "";
     if (!b) b = "";
     return _stricmp(a, b);
+}
+
+void coma_print_dbl(double val) { char buf[64]; snprintf(buf, sizeof(buf), "%g", val); for (int i = 0; buf[i]; i++) if (buf[i] == '.') { buf[i] = ','; break; } printf("%s\n", buf); fflush(stdout); }
+
+/* Primitivas de texto para COMA */
+int coma_str_find(const char *s, const char *sub) {
+    if (!s || !sub) return -1;
+    const char *p = strstr(s, sub);
+    if (!p) return -1;
+    return (int)(p - s);
+}
+char *coma_str_sub(const char *s, int start, int len) {
+    if (!s || start < 0 || len < 0) return (char*)"";
+    int slen = (int)strlen(s);
+    if (start > slen) start = slen;
+    if (start + len > slen) len = slen - start;
+    if (len < 0) len = 0;
+    char *r = (char*)malloc(len + 1);
+    memcpy(r, s + start, len);
+    r[len] = 0;
+    return r;
+}
+unsigned int coma_str_hash(const char *s) {
+    unsigned int h = 2166136261u;
+    if (!s) return h;
+    while (*s) { h ^= (unsigned char)*s; h *= 16777619u; s++; }
+    return h;
 }

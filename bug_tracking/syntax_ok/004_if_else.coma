@@ -1,0 +1,7 @@
+| syntax_ok_004.if_else.coma — Condicional si/sino
+X Igual 5.
+En_Caso_De_Que X Es_Mayor_Que 3.
+    Mostrar "X es mayor que 3."
+Sino.
+    Mostrar "X es menor o igual que 3."
+Fin.

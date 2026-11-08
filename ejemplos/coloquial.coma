@@ -1,0 +1,6 @@
+mi_funcion A y B.
+    devolver A mas B.
+fin.
+
+Resultado igual mi_funcion 10 y 20.
+mostrar Resultado.

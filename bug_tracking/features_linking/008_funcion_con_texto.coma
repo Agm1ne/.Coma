@@ -1,0 +1,10 @@
+funcion Saludar Nombre como texto.
+    devolver "Hola, " y Nombre y "!".
+fin.
+funcion Despedir Nombre como texto.
+    devolver "Adios, " y Nombre y "!".
+fin.
+La Saludo igual Saludar "Mundo".
+La despedida igual Despedir "Mundo".
+mostrar La Saludo.
+mostrar La despedida.

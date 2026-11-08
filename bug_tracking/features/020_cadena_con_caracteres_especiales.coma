@@ -1,0 +1,3 @@
+| features_020.cadena_con_caracteres_especiales.coma — Caracteres especiales
+T Igual "Línea1\nLínea2\tTabulador".
+Mostrar T.

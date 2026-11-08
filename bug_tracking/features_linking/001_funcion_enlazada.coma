@@ -1,0 +1,9 @@
+funcion Doble X.
+    devolver X por 2.
+fin.
+funcion Cuadruple X.
+    devolver Doble Doble X.
+fin.
+mostrar "Cuadruple de 5:".
+La R igual Cuadruple 5.
+mostrar La R.

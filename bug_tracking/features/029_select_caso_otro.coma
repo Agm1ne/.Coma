@@ -1,0 +1,6 @@
+| features_029.select_caso_otro.coma — Select caso/otro
+Select.
+    Caso 1 => Mostrar "Caso 1."
+    Caso 2 => Mostrar "Caso 2."
+    Otro. => Mostrar "Otro."
+.
