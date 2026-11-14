@@ -1,0 +1,28 @@
+ocultar.
+Funcion DibujarCorazon.
+    ventana abrir 400 y 400 con "Corazon - Plano Cartesian".
+    ventana limpiar.
+    ventana color 255 y 0 y 0.
+    T Igual 0.
+    Mientras T Es_Menor_Que 360.
+        ST Igual Seno T.
+        S2 Igual ST por ST.
+        S3 Igual S2 por ST.
+        X Igual 16 por S3.
+        CT Igual Coseno T.
+        T2 Igual T por 2.
+        C2 Igual Coseno T2.
+        T3 Igual T por 3.
+        C3 Igual Coseno T3.
+        T4 Igual T por 4.
+        C4 Igual Coseno T4.
+        Y Igual 13 por CT menos 5 por C2 menos 2 por C3 menos C4.
+        Xp Igual 200 mas X por 8.
+        Yp Igual 200 menos Y por 8.
+        ventana circulo Xp y Yp y 3.
+        T Igual T mas 1.
+    Fin.
+    ventana voltear.
+    esperar 5.
+Fin.
+DibujarCorazon.

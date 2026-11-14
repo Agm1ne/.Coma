@@ -1,0 +1,7 @@
+function F.
+    return 5.
+end.
+function F.
+    return 10.
+end.
+

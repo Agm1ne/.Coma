@@ -1,0 +1,6 @@
+function Hola.
+X is 5.
+end.
+P is address of Hola.
+show P.
+

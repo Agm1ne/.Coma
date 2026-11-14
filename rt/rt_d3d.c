@@ -1,10 +1,10 @@
-/* rt_d3d.c — Sin DirectX: CPU puro (compatibilidad de interfaz) */
+/* rt_d3d.c — Stub de compatibilidad (DirectX eliminado, ahora Vulkan en rt_gpu.c). */
 #include "coma_rt.h"
 #include <stdio.h>
 #include <stdlib.h>
 
 void* coma_d3d_device(void) {
-    printf("gpu: CPU (sin DirectX)\n");
+    printf("gpu: usando Vulkan (vea rt_gpu.c)\n");
     return NULL;
 }
 

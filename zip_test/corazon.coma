@@ -1,0 +1,6 @@
+show "Corazon en plano cartesiano".
+show "  x  |  y".
+show "-----+-----".
+show " -10 |   0".
+show "   0 |  10".
+show "  10 |   0".

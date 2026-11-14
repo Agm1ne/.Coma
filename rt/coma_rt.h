@@ -1,7 +1,12 @@
 /* coma_rt.h — runtime portable de .Coma (teclado, consola, tiempo, mandos).
    La IR generada SOLO llama a coma_*. El driver elige rt_win.c o rt_unix.c
    segun el --target. Sin dependencias salvo libc (+ winmm/XInput por
-   carga dinamica en Windows: cero flags de enlace). */
+   carga dinamica en Windows: cero flags de enlace).
+
+   Extensiones opcionales (solo se enlazan si el programa las usa):
+   - Ventana 2D: Vulkan (aceleracion de hardware) + CPU renderer (fallback universal)
+   - GPU compute: Vulkan compute
+   - Audio, BMP, fuentes, HTTPS */
 #ifndef COMA_RT_H
 #define COMA_RT_H
 
@@ -141,6 +146,57 @@ enum {
 
 void coma_einfo(void);
 void coma_finfo(const char* path);
+
+/* ================================================================
+   VENTANA 2D (extensión opcional: Vulkan + CPU renderer)
+   ================================================================ */
+/* Abrir ventana 2D. Backend: Vulkan si hay driver, si no CPU renderer. */
+void coma_ventana_abrir(int w, int h, const char *title);
+
+/* Limpiar framebuffer a negro. */
+void coma_ventana_limpiar(void);
+
+/* Color actual (RGB 0-255) para dibujo posterior. */
+void coma_ventana_color(int r, int g, int b);
+
+/* Dibujar rectángulo relleno. */
+void coma_ventana_rectangulo(int x, int y, int w, int h);
+
+/* Dibujar círculo relleno. */
+void coma_ventana_circulo(int cx, int cy, int r);
+
+/* Dibujar línea (Bresenham). */
+void coma_ventana_linea(int x1, int y1, int x2, int y2);
+
+/* Dibujar texto con fuente bitmap 8x8. */
+void coma_ventana_rotulo(int x, int y, const char *txt);
+
+/* Dibujar sprite BMP con alpha. */
+void coma_ventana_sprite(const char *path, int x, int y);
+
+/* Presentar framebuffer en pantalla + procesar eventos. */
+void coma_ventana_voltear(void);
+
+/* Consultas de ventana y entrada. */
+int coma_ventana_ancho(void);
+int coma_ventana_alto(void);
+int coma_ventana_raton_x(void);
+int coma_ventana_raton_y(void);
+int coma_ventana_boton_izq(void);
+int coma_ventana_boton_der(void);
+int coma_ventana_tecla(int vk);
+int coma_ventana_pulsa_tecla(int vk);
+
+/* Cerrar ventana y liberar recursos. */
+void coma_ventana_cerrar(void);
+
+/* ================================================================
+   GPU COMPUTE (extensión opcional: Vulkan compute)
+   ================================================================ */
+void coma_gpu_iniciar(void);
+void coma_gpu_programa(const char *hlsl);
+void coma_gpu_run(CList *inL, CList *outL);
+void coma_gpu_terminar(void);
 
 #ifdef __cplusplus
 }

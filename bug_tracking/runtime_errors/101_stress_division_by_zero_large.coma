@@ -1,0 +1,20 @@
+| runtime_errors_101.stress_division_by_zero_large.coma — Division by zero with large random numbers
+numero equal azar 999999999.
+cero equal 0.
+resultado equal numero divided_by cero.
+print resultado.
+numero2 equal azar 500000000.
+resultado2 equal cero divided_by numero2.
+print resultado2.
+decimal equal 123456789,123456789.
+resultado3 equal decimal divided_by cero.
+print resultado3.
+i equal 1.
+while i is_less_or_equal 100.
+    numeroAleatorio equal azar 1000000.
+    divisor equal azar 5.
+    resultadoDivision equal numeroAleatorio divided_by divisor.
+    print resultadoDivision.
+    i equal i plus 1.
+end.
+print "division test complete.".

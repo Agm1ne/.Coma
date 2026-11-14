@@ -5,9 +5,9 @@ Nombre: .Coma (punto y coma: lo que el lenguaje reemplaza).
 Leyenda: [OK] decidido · [?] propuesto, vetable.
 
 CAPACIDADES REALES (no es scripting de consola):
-- Gráficos 2D: ventana Win32 nativa + OpenGL 3.3, framebuffer software, rectángulos, círculos, líneas, sprites BMP, fuente bitmap 8x8, ratón y teclado. [OK]
+- Gráficos 2D: ventana nativa (Windows Win32+OpenGL, Linux X11+Vulkan) + framebuffer software CPU (siempre disponible), rectángulos, círculos, líneas, sprites BMP, fuente bitmap 8x8, ratón y teclado. [OK Vulkan+CPU renderer Linux]
 - Audio: exporta WAV (RIFF PCM 16-bit), MP3 (MPEG-1 Layer I), OGG (OggPCM) desde listas de enteros. [OK]
-- GPU compute: ejecución por CPU (single-source, in-place out[i] = in[i] + 1), comandos iniciar/programa/ejecutar/terminar. [OK]
+- GPU compute: Vulkan compute (comandos iniciar/programa/ejecutar/terminar), fallback CPU si no hay GPU Vulkan disponible. [OK Vulkan compute Linux+Windows]
 - Red TCP: cliente con getaddrinfo + timeout. Servidor HTTP completo (coma_srv_start/accept/read/write/close, coma_http_serve, CORS, hash FNV-1a). [OK]
 - HTTPS: handshake TLS real con Schannel (Windows), validación de certificados, hasta 3 saltos HTTP, GET y POST. [OK]
 - Hilos y paralelismo: hilos detached, actores (64 con buzones ring), canales thread-safe, try/catch con setjmp/longjmp, futuro, select, segundo_plano, lanzar. [OK]
@@ -15,9 +15,9 @@ CAPACIDADES REALES (no es scripting de consola):
 - Ficheros: abrir/crear/leer Linea./escribir X./cerrar./eliminar "f". Sesión única, autocierra vía atexit. [OK]
 - JSON: parser recursivo (objeto/array/str/num/bool/null), get/set, serialize. [OK]
 - CSV: parser con campos comillados, filas/cols/celda. [OK]
-- Teclado y mando: Tecla (sondeo en tiempo real, flechas→wasd), Mando (XInput/winmm/evdev para gamepad/guitarra GH). [OK]
+- Teclado y mando: Tecla (sondeo en tiempo real, flechas→wasd), Mando (XInput/winmm/evdev para gamepad/guitarra GH; Linux evdev /dev/input, grupo `input`). [OK]
 - Sistema: Hora, Fecha, Usuario, Sistema, Version, Directorio (presets de solo lectura). [OK]
-- Compilación nativa: LLVM IR + zig cc → binarios Windows x64 y Unix. [OK]
+- Compilación nativa: LLVM IR + zig cc → binarios Windows x64 y Linux x64 (`--target:x86_64-linux`, `--target:x86_64-pc-windows-msvc`). [OK]
 
 1. NOMBRES
 - Variables y funciones: inicial mayúscula, Unicode (eñes, tildes, Ñ, Á). Normalización NFC. Se demuestra: Daño_total, Suma_daño, Precio_poción. [OK]
@@ -210,7 +210,7 @@ CAPACIDADES REALES (no es scripting de consola):
 - Mario HUD (mario_hud.coma + mario_hud_en.coma): una sola línea viva vía pisa (ES 5 saltos/425 retornos, EN igual), victoria 30pts. [OK]
 - Demo técnica total: coma/juego/mazmorra.coma (+mazmorra_en.coma): presets del sistema en vivo (Hora/Fecha/Sistema/Usuario/Versión/Directorio), chistes en lista de texto con azar, comprobar que corre al arrancar, crítico con y_bit, magia 0x25, hazaña en fichero y telégrafo TCP optativo. Se juega directo en el .exe (sin .bat). [OK]
 - Demos coloquiales (coma/ejemplos/coloquial.coma + colloquial.coma): el diccionario compila y CORRE (78.5, caro.). [OK]
-- Plataformas v1: Windows x64/x86, Android ARM64. [?]
+- Plataformas v1: Windows x64/x86, Linux x64. [OK]
 
 17. PUNTEROS (simples a propósito)
 - Crear/re-apuntar: `puntero Alias a Original.` (EN pointer to). Primera vez declara; luego re-apunta. Sin comillas: son nombres, no textos (así valen typos, scope y eñes). [OK]
@@ -288,7 +288,7 @@ CAPACIDADES REALES (no es scripting de consola):
 - Tablero a 1 printf: marco en bufer de pila (celdas 3 bytes, suelo ⋅ U+22C5) + un solo `%s` por dibujo (antes ~89 llamadas). Sin loads en el printf gordo (borde zig-cc/LLVM-21). Dirty-check con memcmp salta frames quietos. [OK]
 - `zig cc -O2` vale sobre nuestro IR: bucle 5M suma 87→25ms (luego ~27→~17, mismo resultado 1642668640). El backend LLVM es gratis: nuestro trabajo es IR afinado y pocas syscalls, no pelear con el optimizador. [OK]
 - GANAR, no empatar (medido 2026-10-12, duelo/ con mismo -O2): plegado real en sema (46 en el IR, la demo ya es verdad); params `noalias nocapture` (las copias entrantes no escapan: C no puede prometerlo); tablero a 1 printf con dirty por bandera (event-driven, no polling de 12 KB) + reposicionado en 1 syscall + ramas muertas podadas con literal; `_kbhit` sin consola cacheado a ns (6 ms cazados). Render 301 frames: Coma 31,5 vs C 33,1 ms (-4,9 %, mismo dibujo al byte); núcleo y bench empatados; binarios +0,5–3 %. La corona ya no es promesa. [OK]
-- LÍMITE HONESTO: C sigue ganando en backend maduro y cero-coste real; Coma gana en especialización por construcción (tipos, dibujo, inputs). La brecha que queda es suya (asignación de registros, vectorización), no nuestra: la heredamos con LLVM.
+- LÍMITE HONESTO: C sigue ganando en backend maduro y cero-coste real; Coma gana en especialización por construcción (tipos, dibujo, inputs). La brecha que queda es suya (asignación de registros, vectorización), no nuestra: la heredamos con LLVM. La ventana 2D y GPU compute en Linux usan Vulkan; sin driver Vulkan instalado cae automáticamente al renderizador por CPU (siempre disponible).
 - C vs Coma medido (mismo algoritmo suma 1..2000M, ambos -O2): C 27,9ms/2560KB, Coma 21,9ms/2564KB, mismo resultado 321730048. LLVM reconoce el idioma en los dos (mide arranque). Empate en CPU y RAM en cómputo; en juegos manda la consola (1 printf/dibujo, dirty-check) donde se diseñó para ganar. Chequeos E101/E102 cuestan unas instrucciones por acceso (el precio de no corromper memoria).
 
 24. TIEMPO Y AZAR
@@ -375,8 +375,8 @@ CAPACIDADES REALES (no es scripting de consola):
 
 40. RUNTIME SEPARADO (CORE vs EXTENSIONS) [OK]
 - `coma_rt.h` = core obligatorio (consola, teclado, archivos, red TCP, hilos, actores, canales, memoria, errores).
-- `coma_rt_ext.h` = extensiones opcionales (ventana, audio, GPU, BMP, fuentes, HTTPS POST/GET).
-- El compilador detecta qué extensiones usa el programa (AST) y enlaza solo los .c necesarios. Un programa sin ventana/audio/GPU no enlaza OpenGL, GDI, etc. [OK]
+- `coma_rt_ext.h` = extensiones opcionales (ventana Vulkan+CPU renderer, audio, GPU compute Vulkan, BMP, fuentes, HTTPS POST/GET).
+- El compilador detecta qué extensiones usa el programa (AST) y enlaza solo los .c necesarios. Un programa sin ventana/audio/GPU no enlaza Vulkan, OpenGL, GDI, etc. [OK]
 
 41. CIERRES / CLOSURES (captura de entorno) [OK v1]
 - Una función anidada puede capturar variables locales de la función que la contiene: `funcion Padre X. Contador igual 0. funcion Hija Y. Contador igual Contador mas Y. devolver Contador. fin. devolver Hija 5. fin.`

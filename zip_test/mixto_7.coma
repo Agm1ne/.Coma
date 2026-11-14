@@ -1,0 +1,6 @@
+function Padre.
+  function Hija.
+    devolver 60.
+  fin.
+  devolver 10.
+fin.

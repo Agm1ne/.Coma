@@ -1,0 +1,54 @@
+funcion CalcularDanio Vida y Ataque.
+    Danio igual Ataque entre 2.
+    devolver Danio.
+fin.
+funcion SumaLista L como lista.
+    Suma igual 0.
+    I igual 1.
+    mientras I es_menor_o_igual longitud de L.
+        Suma igual Suma mas elemento I de L.
+        I igual I mas 1.
+    fin.
+    devolver Suma.
+fin.
+Numeros igual lista 10 y 20 y 30 y 40 y 50.
+Resultado igual SumaLista Numeros.
+Mostrar Resultado.
+Heroe igual registro Vida 100 y Ataque 30.
+Mostrar Vida de Heroe.
+Mostrar Ataque de Heroe.
+Vida de Heroe igual 80.
+Mostrar Vida de Heroe.
+Total igual 0.
+I igual 1.
+mientras I es_menor_o_igual 100.
+    NumeroAleatorio igual azar 1000000.
+    Total igual Total mas NumeroAleatorio.
+    I igual I mas 1.
+fin.
+Mostrar "total:".
+Mostrar Total.
+A igual 5 y_bit 3.
+B igual 5 o_bit 3.
+C igual 5 xor 3.
+D igual 1 desplaza_izquierda 4.
+Mostrar A.
+Mostrar B.
+Mostrar C.
+Mostrar D.
+Mostrar Hora.
+Mostrar Fecha.
+Mostrar Sistema.
+Mostrar Usuario.
+AzarValor igual azar 1000.
+Mostrar AzarValor.
+esperar 0,5.
+Mostrar "listo.".
+crear "estres.txt".
+escribir "prueba de estrés.".
+escribir Total.
+cerrar.
+abrir "estres.txt".
+leer Linea.
+Mostrar Linea.
+cerrar.

@@ -1,0 +1,3 @@
+function Padre.
+  return 30.
+fin.

@@ -1,0 +1,11 @@
+dia igual 2.
+segun dia.
+    caso 1.
+        show "lunes".
+    caso 2.
+        show "martes".
+    caso 3.
+        show "miercoles".
+    otro.
+        show "otro dia".
+fin.

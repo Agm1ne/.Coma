@@ -178,9 +178,43 @@ proc inferBodyNames(ctx: var SemaContext, body: Node, fs: Scope) =
           let (cfound, csym) = ctx.globalScope.findSym(body.left.identName)
           if cfound: t = csym.typ
       of nkCall:
-        let (cf, cs) = ctx.globalScope.findSym(body.left.funcName)
-        if cf and cs.kind == skFunc and cs.typ in {dtInt, dtFloat, dtString, dtList, dtListStr, dtListList}:
-          t = cs.typ
+        if body.left.funcName in ["VentanaRatonX","VentanaRatonY","VentanaBotonIzq"]: t = dtInt
+        elif body.left.funcName == "VentanaTecla": t = dtInt
+        elif body.left.funcName == "HttpsGet": t = dtString
+        elif body.left.funcName.toLowerAscii() in ["seno", "coseno", "sin", "cos"]: t = dtFloat
+        else:
+          let (cf, cs) = ctx.globalScope.findSym(body.left.funcName)
+          if cf and cs.kind == skFunc and cs.typ in {dtInt, dtFloat, dtString, dtList, dtListStr, dtListList}:
+            t = cs.typ
+      of nkBinaryOp:
+        var tL = dtInt
+        var tR = dtInt
+        if body.left.left != nil:
+          if body.left.left.kind == nkFloat: tL = dtFloat
+          elif body.left.left.kind == nkIdent:
+            if fs.symbols.hasKey(body.left.left.identName): tL = fs.symbols[body.left.left.identName].typ
+            else:
+              let (lf, ls) = ctx.globalScope.findSym(body.left.left.identName)
+              if lf: tL = ls.typ
+          elif body.left.left.kind == nkCall:
+            if body.left.left.funcName.toLowerAscii() in ["seno", "coseno", "sin", "cos"]: tL = dtFloat
+            else:
+              let (cf, cs) = ctx.globalScope.findSym(body.left.left.funcName)
+              if cf and cs.kind == skFunc: tL = cs.typ
+        if body.left.right != nil:
+          if body.left.right.kind == nkFloat: tR = dtFloat
+          elif body.left.right.kind == nkIdent:
+            if fs.symbols.hasKey(body.left.right.identName): tR = fs.symbols[body.left.right.identName].typ
+            else:
+              let (rf, rs) = ctx.globalScope.findSym(body.left.right.identName)
+              if rf: tR = rs.typ
+          elif body.left.right.kind == nkCall:
+            if body.left.right.funcName.toLowerAscii() in ["seno", "coseno", "sin", "cos"]: tR = dtFloat
+            else:
+              let (cf, cs) = ctx.globalScope.findSym(body.left.right.funcName)
+              if cf and cs.kind == skFunc: tR = cs.typ
+        if tL == dtFloat or tR == dtFloat: t = dtFloat
+        elif tL == dtString or tR == dtString: t = dtString
       of nkListAccess:
         if body.left.left != nil and body.left.left.kind == nkIdent:
           var lt = dtUnknown
@@ -395,10 +429,9 @@ proc analyzeExpr*(ctx: var SemaContext, n: Node): DataTypeKind =
     var argTyps: seq[DataTypeKind] = @[]
     for arg in n.args:
       argTyps.add(ctx.analyzeExpr(arg))
-    let (ffound, fsym) = ctx.currentScope.findSym(n.funcName)
+    let (ffound, fsym) = (if n.funcName in ["VentanaRatonX","VentanaRatonY","VentanaBotonIzq"]: (true, Symbol(kind: skFunc, name: n.funcName, params: @[], paramTyps: @[], typ: dtInt)) elif n.funcName == "VentanaTecla": (true, Symbol(kind: skFunc, name: n.funcName, params: @["x"], paramTyps: @[dtInt], typ: dtInt)) elif n.funcName == "HttpsGet": (true, Symbol(kind: skFunc, name: n.funcName, params: @["url"], paramTyps: @[dtString], typ: dtString)) elif n.funcName.toLowerAscii() in ["seno", "coseno", "sin", "cos"]: (true, Symbol(kind: skFunc, name: n.funcName, params: @["x"], paramTyps: @[dtInt], typ: dtFloat)) else: ctx.currentScope.findSym(n.funcName))
     if not ffound or fsym.kind != skFunc:
-      ctx.issues.add(Issue(line: n.line, col: n.col, code: "E003", level: eError,
-                           msg: "funcion desconocida: " & n.funcName, hint: "declarala o revisa el nombre"))
+      ctx.issues.add(Issue(line: n.line, col: n.col, code: "E003", level: eError, msg: "funcion desconocida: " & n.funcName, hint: "declarala o revisa el nombre"))
       n.typ = dtInt
       n.intWidth = 32
       return dtInt
@@ -813,6 +846,7 @@ proc analyzeStmt*(ctx: var SemaContext, n: Node) =
     var capVars: seq[string] = @[]
     var capTyps: seq[DataTypeKind] = @[]
     for vn in freeVars.keys:
+      if ctx.globalScope.symbols.hasKey(vn): continue
       var vt = dtInt
       if ctx.currentScope.parent != nil and ctx.currentScope.parent.symbols.hasKey(vn):
         vt = ctx.currentScope.parent.symbols[vn].typ
@@ -974,3 +1008,4 @@ proc analyzeSemantics*(root: Node, issues: var seq[Issue]): SemaContext =
     ctx.analyzeStmt(stmt)
   issues.add(ctx.issues)
   return ctx
+

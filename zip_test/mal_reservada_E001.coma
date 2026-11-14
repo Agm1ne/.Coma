@@ -1,0 +1,4 @@
+function show.
+    return 5.
+end.
+

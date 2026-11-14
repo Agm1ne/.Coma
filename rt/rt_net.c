@@ -22,6 +22,7 @@ typedef SOCKET sock_t;
 #include <sys/socket.h>
 #include <netdb.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 typedef int sock_t;
 #define SOCK_BAD (-1)
 #define SOCK_CLOSE(s) close(s)
@@ -213,7 +214,11 @@ int coma_srv_read(int client, char *buf, int maxlen) {
     if (maxlen <= 0) return 0;
     printf("C_SRV_READ: client=%d buf=%p maxlen=%d\n", client, (void*)buf, maxlen); fflush(stdout);
     int n = recv((sock_t)client, buf, maxlen-1, 0);
+#ifdef _WIN32
     printf("C_SRV_READ: recv=%d err=%d\n", n, n==-1?(int)WSAGetLastError():0); fflush(stdout);
+#else
+    printf("C_SRV_READ: recv=%d err=%d\n", n, n==-1?errno:0); fflush(stdout);
+#endif
     if (n > 0) buf[n] = 0; else if (n == 0) buf[0] = 0;
     return n;
 }

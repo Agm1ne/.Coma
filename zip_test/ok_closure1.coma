@@ -1,0 +1,9 @@
+function Padre X.
+  contador igual 0.
+  function Hija Y.
+    contador igual contador mas Y.
+    devolver contador.
+  fin.
+  devolver Hija 5.
+fin.
+show Padre 10.

@@ -1,3 +1,4 @@
+ocultar.
 | Mazmorra del Eco: todo Coma en un juego |
 | pedir, registro, lista, mapa, combate, azar, HUD y dos finales. |
 
@@ -288,23 +289,9 @@ fin.
 mostrar "Telegrafo arcano? (s para si).".
 pedir el Telegrafo.
 de en caso de que el Telegrafo es_equivalente_a "s".
-    conectar "official-joke-api.appspot.com" 80.
-    enviar "GET /random_joke HTTP/1.0".
-    enviar "Host: official-joke-api.appspot.com".
-    enviar "".
-    K igual 0.
-    LineaWeb igual "x".
-    mientras K es menor que 15.
-        recibir LineaWeb.
-        K igual K mas 1.
-        de en caso de que LineaWeb es_igual_a "".
-            para.
-        fin.
-    fin.
-    recibir ChisteRed.
+    ChisteRed igual HttpsGet "https://v2.jokeapi.dev/joke/Any?lang=es&format=txt".
     mostrar "El eter cuenta:".
     mostrar ChisteRed.
-    desconectar.
 fin.
 mostrar "Otra vez? (s para si).".
 pedir la Otra.

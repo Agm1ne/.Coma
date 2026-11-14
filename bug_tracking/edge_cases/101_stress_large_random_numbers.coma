@@ -1,0 +1,29 @@
+| edge_cases_101.stress_large_random_numbers.coma — Large random numbers and division stress test
+Numero1 equal Azar 999999999.
+Numero2 equal Azar 999999999.
+Resultado equal Numero1 divided_by Numero2.
+print Numero1.
+print Numero2.
+print Resultado.
+Numero3 equal Azar 1000000000.
+Numero4 equal 0.
+Resultado2 equal Numero3 divided_by Numero4.
+print Resultado2.
+Decimal1 equal 3,1415926535.
+Decimal2 equal 2,7182818284.
+Resultado3 equal Decimal1 plus Decimal2.
+print Resultado3.
+Resultado4 equal Decimal1 divided_by Decimal2.
+print Resultado4.
+Resultado5 equal 999999999 times 999999999.
+print Resultado5.
+Resultado6 equal 999999999 plus 999999999.
+print Resultado6.
+Resultado7 equal 999999999 minus 999999999.
+print Resultado7.
+ListaGrandes equal list 999999999 and 888888888 and 777777777 and 666666666 and 555555555.
+I equal 1.
+while I is_less_or_equal length of ListaGrandes.
+    print element I of ListaGrandes.
+    I equal I plus 1.
+end.

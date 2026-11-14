@@ -1,0 +1,247 @@
+1.1V.zip - Contenido y estructura de destino para release
+=========================================================
+
+ARCHIVOS PRINCIPALES:
+---------------------
+D:\AgmineEngine\coma\1.1V.zip
+
+CONTENIDO DEL ZIP Y UBICACIÓN DE DESTINO:
+=========================================
+
+EJECUTABLES PRINCIPALES:
+------------------------
+coma.exe                                    -> / (raíz del proyecto)
+servidor.exe                                -> / (raíz del proyecto)
+
+EJECUTABLES DE EJEMPLOS:
+------------------------
+ejemplos/hex_test.exe                       -> ejemplos/hex_test.exe
+ejemplos/lista_simple.exe                   -> ejemplos/listasimple.exe
+ejemplos/rpg.exe                            -> ejemplos/rpg.exe
+ejemplos/sistema.exe                        -> ejemplos/sistema.exe
+
+EJECUTABLES DE BENCHMARKS DUELO:
+--------------------------------
+duelo/buscar_coma.exe                       -> duelo/buscar_coma.exe
+duelo/suma_coma.exe                         -> duelo/suma_coma.exe
+duelo/tablero_coma.exe                      -> duelo/tablero_coma.exe
+duelo/benchmark_buscar.exe                  -> duelo/benchmark_buscar.exe
+duelo/benchmark_suma.exe                    -> duelo/benchmark_suma.exe
+
+EJECUTABLE WEB:
+---------------
+webdemo/servidor.exe                        -> webdemo/servidor.exe
+
+COMPILADOR PRINCIPAL:
+---------------------
+nim/coma.exe                                -> nim/coma.exe
+
+RUNTIME - HEADERS:
+------------------
+rt/coma_rt.h                                -> rt/coma_rt.h
+rt/coma_rt_ext.h                            -> rt/coma_rt_ext.h
+
+RUNTIME - FUENTES C:
+--------------------
+rt/rt_2d.c                                  -> rt/rt_2d.c
+rt/rt_admin.c                               -> rt/rt_admin.c
+rt/rt_audio.c                               -> rt/rt_audio.c
+rt/rt_bmp.c                                 -> rt/rt_bmp.c
+rt/rt_csv.c                                 -> rt/rt_csv.c
+rt/rt_d3d.c                                 -> rt/rt_d3d.c
+rt/rt_font8x8.c                             -> rt/rt_font8x8.c
+rt/rt_fs.c                                  -> rt/rt_fs.c
+rt/rt_gpu.c                                 -> rt/rt_gpu.c
+rt/rt_https.c                               -> rt/rt_https.c
+rt/rt_json.c                                -> rt/rt_json.c
+rt/rt_net.c                                 -> rt/rt_net.c
+rt/rt_thread.c                              -> rt/rt_thread.c
+rt/rt_unix.c                                -> rt/rt_unix.c
+rt/rt_ventana.c                             -> rt/rt_ventana.c
+rt/rt_win.c                                 -> rt/rt_win.c
+
+SCRIPTS DE BATERÍA:
+-------------------
+tools/bateria/correr.bat                    -> tools/bateria/correr.bat
+
+CASOS DE PRUEBA - SINTAXIS OK:
+------------------------------
+tools/bateria/casos/ok_anidadas.coma
+tools/bateria/casos/ok_asa.coma
+tools/bateria/casos/ok_audio.coma
+tools/bateria/casos/ok_callback.coma
+tools/bateria/casos/ok_closure1.coma
+tools/bateria/casos/ok_ffi.coma
+tools/bateria/casos/ok_fichero.coma
+tools/bateria/casos/ok_flujo.coma
+tools/bateria/casos/ok_funcion.coma
+tools/bateria/casos/ok_gpu.coma
+tools/bateria/casos/ok_hola.coma
+tools/bateria/casos/ok_lista.coma
+tools/bateria/casos/ok_listas.coma
+tools/bateria/casos/ok_mem.coma
+tools/bateria/casos/ok_mientras.coma
+tools/bateria/casos/ok_recursiva.coma
+tools/bateria/casos/ok_registro.coma
+tools/bateria/casos/ok_segun.coma
+tools/bateria/casos/ok_si.coma
+tools/bateria/casos/ok_suma.coma
+tools/bateria/casos/ok_texto.coma
+tools/bateria/casos/ok_texto_doble.coma
+tools/bateria/casos/ok_traer_ext.coma
+tools/bateria/casos/ok_trig.coma
+tools/bateria/casos/ok_ventana_abrir_cerrar.coma
+tools/bateria/casos/ok_ventana_dibujar.coma
+
+CASOS DE PRUEBA - ERRORES SINTÁCTICOS:
+--------------------------------------
+tools/bateria/casos/mal_aridad_expr_E202.coma
+tools/bateria/casos/mal_arity_E202.coma
+tools/bateria/casos/mal_asa_agregar_E202.coma
+tools/bateria/casos/mal_asa_azar_E202.coma
+tools/bateria/casos/mal_asa_devuelve_E202.coma
+tools/bateria/casos/mal_asa_enviar_E202.coma
+tools/bateria/casos/mal_asa_int_E202.coma
+tools/bateria/casos/mal_asa_lista_E202.coma
+tools/bateria/casos/mal_asa_menos_E202.coma
+tools/bateria/casos/mal_asa_mixta_E202.coma
+tools/bateria/casos/mal_asa_ordena_E202.coma
+tools/bateria/casos/mal_asa_pedir_E202.coma
+tools/bateria/casos/mal_asa_recorre_E202.coma
+tools/bateria/casos/mal_asa_segun_E202.coma
+tools/bateria/casos/mal_asa_suma_E202.coma
+tools/bateria/casos/mal_asa_texto_E202.coma
+tools/bateria/casos/mal_cargar_falta_E001.coma
+tools/bateria/casos/mal_cargar_sinc_E001.coma
+tools/bateria/casos/mal_closure_lista_E202.coma
+tools/bateria/casos/mal_devolver_E202.coma
+tools/bateria/casos/mal_direccion_mala_E003.coma
+tools/bateria/casos/mal_direccion_var_E202.coma
+tools/bateria/casos/mal_duplicada_E003.coma
+tools/bateria/casos/mal_ext_alias_E001.coma
+tools/bateria/casos/mal_ext_conv_E001.coma
+tools/bateria/casos/mal_ext_lista_E202.coma
+tools/bateria/casos/mal_ext_minusc_E001.coma
+tools/bateria/casos/mal_gpu_destino_E202.coma
+tools/bateria/casos/mal_gpu_numero_E202.coma
+tools/bateria/casos/mal_gpu_sin_a_E001.coma
+tools/bateria/casos/mal_gpu_texto_E202.coma
+tools/bateria/casos/mal_https_destino_E202.coma
+tools/bateria/casos/mal_https_numero_E202.coma
+tools/bateria/casos/mal_https_sin_a_E001.coma
+tools/bateria/casos/mal_https_sin_traer_E001.coma
+tools/bateria/casos/mal_mezcla_E202.coma
+tools/bateria/casos/mal_nombre_minuscula_E001.coma
+tools/bateria/casos/mal_param_reservado_E001.coma
+tools/bateria/casos/mal_reservada_E001.coma
+tools/bateria/casos/mal_sin_fin_E001.coma
+tools/bateria/casos/mal_sin_punto_E001.coma
+tools/bateria/casos/mal_unknown_E003.coma
+tools/bateria/casos/mal_ventana_color_falta_E001.coma
+
+CASOS DE PRUEBA - MIXTOS:
+-------------------------
+tools/bateria/casos/mixto_1.coma
+tools/bateria/casos/mixto_2.coma
+tools/bateria/casos/mixto_3.coma
+tools/bateria/casos/mixto_4.coma
+tools/bateria/casos/mixto_5.coma
+tools/bateria/casos/mixto_7.coma
+
+CASOS DE PRUEBA - ERRORES DE RUNTIME:
+-------------------------------------
+tools/bateria/casos/run_e101.coma
+tools/bateria/casos/run_e102.coma
+tools/bateria/casos/run_e105.coma
+tools/bateria/casos/run_ventana_sprite_E105.coma
+
+CASOS DE PRUEBA - OK (resultados esperados):
+--------------------------------------------
+tools/bateria/casos/ok_anidadas.txt
+tools/bateria/casos/ok_asa.txt
+tools/bateria/casos/ok_audio.txt
+tools/bateria/casos/ok_callback.txt
+tools/bateria/casos/ok_fichero.txt
+tools/bateria/casos/ok_flujo.txt
+tools/bateria/casos/ok_funcion.txt
+tools/bateria/casos/ok_hola.txt
+tools/bateria/casos/ok_lista.txt
+tools/bateria/casos/ok_listas.txt
+tools/bateria/casos/ok_mem.txt
+tools/bateria/casos/ok_mientras.txt
+tools/bateria/casos/ok_recursiva.txt
+tools/bateria/casos/ok_registro.txt
+tools/bateria/casos/ok_segun.txt
+tools/bateria/casos/ok_si.txt
+tools/bateria/casos/ok_suma.txt
+tools/bateria/casos/ok_texto.txt
+tools/bateria/casos/ok_texto_doble.txt
+tools/bateria/casos/ok_traer_ext.txt
+tools/bateria/casos/ok_trig.txt
+
+CASOS DE PRUEBA - ERRORES SEMÁNTICOS:
+-------------------------------------
+tools/bateria/casos/... (todos los mal_*_E202.coma y mal_*_E001.coma listados arriba)
+
+CASOS DE PRUEBA - ERRORES DE TIPO:
+----------------------------------
+tools/bateria/casos/... (todos los type_errors listados arriba)
+
+CASOS DE PRUEBA - ERRORES SEMÁNTICOS BUG_TRACKING:
+--------------------------------------------------
+bug_tracking/semantic_errors/001_tipo_cambio.coma
+... (hasta 030_comparacion_asa_texto.coma)
+
+CASOS DE PRUEBA - ERRORES DE TIEMPO DE EJECUCIÓN:
+-------------------------------------------------
+bug_tracking/runtime_errors/001_indice_fuera_rango.coma
+... (hasta 005_fichero_no_existe.coma)
+
+CASOS DE PRUEBA - ERRORES DE SINTAXIS:
+--------------------------------------
+bug_tracking/syntax_errors/001_missing_dot.coma
+... (hasta 030_traer_modulo_inexistente.coma)
+
+CASOS DE PRUEBA - SINTAXIS OK BUG_TRACKING:
+-------------------------------------------
+bug_tracking/syntax_ok/001_hola.coma
+... (hasta 030_pipeline_completo.coma)
+
+CASOS DE PRUEBA - ERRORES DE TIPO BUG_TRACKING:
+-----------------------------------------------
+bug_tracking/type_errors/001_entero_vs_decimal.coma
+... (hasta 030_tipo_cambio_registro_lista.coma)
+
+CASOS DE PRUEBA - EDGE CASES:
+-----------------------------
+bug_tracking/edge_cases/001_lista_vacia.coma
+... (hasta 030_subrayado_en_nombre.coma)
+
+CASOS DE PRUEBA - FEATURES:
+---------------------------
+bug_tracking/features/003_articulos_ignorables.coma
+... (hasta 030_try_catch_lanzar.coma)
+
+CASOS DE PRUEBA - FEATURES_LINKING:
+-----------------------------------
+bug_tracking/features_linking/001_funcion_enlazada.coma
+... (hasta 025_texto_articulos.coma)
+
+ARCHIVOS DE RESULTADOS ESPERADOS (.txt):
+----------------------------------------
+bug_tracking/edge_cases/001_lista_vacia.txt
+... (todos los .txt correspondientes a edge_cases)
+
+ESTRUCTURA DE INSTALACIÓN RECOMENDADA:
+======================================
+Al descomprimir 1.1V.zip en la raíz del proyecto:
+- Los ejecutables (.exe) van en la raíz o en sus carpetas respectivas
+- Los fuentes .c y .h del runtime van en /rt/
+- El compilador va en /nim/coma.exe
+- Los tests y casos de prueba en sus respectivas carpetas
+- El script de batería en tools/bateria/correr.bat
+
+ARCHIVO ZIP:
+------------
+1.1V.zip (1.9 MB) - Listo para subir a GitHub Releases
+Ubicación: D:\AgmineEngine\coma\1.1V.zip

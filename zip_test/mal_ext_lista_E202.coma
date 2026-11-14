@@ -1,0 +1,2 @@
+funcion externa F X as list as int alias "f" usando cdecl.
+show F 5.

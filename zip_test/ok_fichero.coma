@@ -1,0 +1,9 @@
+create "test_f.txt".
+escribir "Hola archivo".
+close.
+open "test_f.txt".
+read Linea.
+show Linea.
+close.
+
+

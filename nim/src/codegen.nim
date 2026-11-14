@@ -423,6 +423,22 @@ proc emitProlog*(cg: var CodeGen) =
   cg.lines.add("")
   cg.lines.add("; libc + runtime portable coma/rt (ver coma_rt.h)")
   cg.lines.add("declare i32 @printf(i8*, ...)")
+  cg.lines.add("declare double @sin(double)")
+  cg.lines.add("declare double @cos(double)")
+  cg.lines.add("declare void @coma_ventana_abrir(i32, i32, i8*)")
+  cg.lines.add("declare void @coma_ventana_limpiar()")
+  cg.lines.add("declare void @coma_ventana_color(i32, i32, i32)")
+  cg.lines.add("declare void @coma_ventana_rectangulo(i32, i32, i32, i32)")
+  cg.lines.add("declare void @coma_ventana_circulo(i32, i32, i32)")
+  cg.lines.add("declare void @coma_ventana_linea(i32, i32, i32, i32)")
+  cg.lines.add("declare void @coma_ventana_rotulo(i32, i32, i8*)")
+  cg.lines.add("declare void @coma_ventana_voltear()")
+  cg.lines.add("declare void @coma_ventana_cerrar()")
+  cg.lines.add("declare i32 @coma_ventana_raton_x()")
+  cg.lines.add("declare i32 @coma_ventana_raton_y()")
+  cg.lines.add("declare i32 @coma_ventana_boton_izq()")
+  cg.lines.add("declare i32 @coma_ventana_tecla(i32)")
+  cg.lines.add("declare i8* @coma_https_get_str(i8*)")
   cg.lines.add("declare i64 @strlen(i8*)")
   cg.lines.add("declare i8* @strncpy(i8*, i8*, i64)")
   cg.lines.add("declare i32 @strcmp(i8*, i8*)")
@@ -634,7 +650,7 @@ proc genLogicAndOr(cg: var CodeGen, n: Node, isAnd: bool): (string, string) =
   cg.emit(res & " = load i1, i1* @.logres")
   return (res, "i1")
 
-proc exprIsFloat(cg: CodeGen, n: Node): bool =
+proc exprIsFloat(cg: CodeGen, n: Node, types: Table[string, DataTypeKind] = initTable[string, DataTypeKind]()): bool =
   ## ¿La expresión vale double? (para inferir el tipo de una local)
   if n == nil: return false
   case n.kind
@@ -642,12 +658,18 @@ proc exprIsFloat(cg: CodeGen, n: Node): bool =
   of nkDelta, nkTiempo: return true
   of nkBinaryOp:
     if n.strVal == "entre": return true
-    return cg.exprIsFloat(n.left) or cg.exprIsFloat(n.right)
+    return cg.exprIsFloat(n.left, types) or cg.exprIsFloat(n.right, types)
   of nkUnaryOp:
-    if n.strVal == "menos": return cg.exprIsFloat(n.left)
+    if n.strVal == "menos": return cg.exprIsFloat(n.left, types)
     return false
   of nkIdent:
+    if types.hasKey(n.identName): return types[n.identName] == dtFloat
     return cg.symTyp(n.identName) == dtFloat
+  of nkCall:
+    if n.funcName.toLowerAscii() in ["seno", "coseno", "sin", "cos"]: return true
+    let (cf, cs) = cg.semaCtx.globalScope.findSym(n.funcName)
+    if cf and cs.kind == skFunc: return cs.typ == dtFloat
+    return false
   else: return false
 
 proc collectBodyLocals(cg: var CodeGen, body: Node, types: var Table[string, DataTypeKind]) =
@@ -719,12 +741,15 @@ proc collectBodyLocals(cg: var CodeGen, body: Node, types: var Table[string, Dat
       elif body.left != nil and body.left.kind == nkListRecordLit:
         discard # listas de registros: global compartido, no local
       elif body.left != nil and body.left.kind == nkCall:
-        let (cf, cs) = cg.semaCtx.globalScope.findSym(body.left.funcName)
-        if cf and cs.kind == skFunc and cs.typ in {dtInt, dtFloat, dtString, dtList, dtListStr, dtListList}:
-          types[body.identName] = cs.typ
+        if body.left.funcName.toLowerAscii() in ["seno", "coseno", "sin", "cos"]:
+          types[body.identName] = dtFloat
         else:
-          types[body.identName] = dtInt
-      elif body.left != nil and cg.exprIsFloat(body.left):
+          let (cf, cs) = cg.semaCtx.globalScope.findSym(body.left.funcName)
+          if cf and cs.kind == skFunc and cs.typ in {dtInt, dtFloat, dtString, dtList, dtListStr, dtListList}:
+            types[body.identName] = cs.typ
+          else:
+            types[body.identName] = dtInt
+      elif body.left != nil and cg.exprIsFloat(body.left, types):
         types[body.identName] = dtFloat
       else:
         types[body.identName] = dtInt
@@ -1118,6 +1143,34 @@ proc genExpr*(cg: var CodeGen, n: Node): (string, string) =
     return (v, ty)
 
   of nkCall:
+    if n.funcName == "VentanaRatonX":
+      let t1 = cg.newTemp()
+      cg.emit(t1 & " = call i32 @coma_ventana_raton_x()")
+      return (t1, "i32")
+    elif n.funcName == "VentanaRatonY":
+      let t2 = cg.newTemp()
+      cg.emit(t2 & " = call i32 @coma_ventana_raton_y()")
+      return (t2, "i32")
+    elif n.funcName == "VentanaBotonIzq":
+      let t3 = cg.newTemp()
+      cg.emit(t3 & " = call i32 @coma_ventana_boton_izq()")
+      return (t3, "i32")
+    elif n.funcName == "VentanaTecla":
+      let ta = cg.genExpr(n.args[0])
+      let t4 = cg.newTemp()
+      cg.emit(t4 & " = call i32 @coma_ventana_tecla(i32 " & cg.toI32(ta[0], ta[1]) & ")")
+      return (t4, "i32")
+    elif n.funcName == "HttpsGet":
+      let tu = cg.genExpr(n.args[0])
+      let t5 = cg.newTemp()
+      cg.emit(t5 & " = call i8* @coma_https_get_str(i8* " & tu[0] & ")")
+      return (t5, "i8*")
+    elif n.funcName.toLowerAscii() in ["seno", "sin", "coseno", "cos"]:
+      let ta = cg.genExpr(n.args[0])
+      let t6 = cg.newTemp()
+      let fn = if n.funcName.toLowerAscii() in ["seno", "sin"]: "sin" else: "cos"
+      cg.emit(t6 & " = call double @" & fn & "(double " & cg.toDouble(ta[0], ta[1]) & ")")
+      return (t6, "double")
     # Firma de la callee: convierte cada arg a su tipo (sema ya valido).
     var ptyps: seq[DataTypeKind] = @[]
     let (cfound, cfsym) = cg.semaCtx.globalScope.findSym(n.funcName)
@@ -1175,8 +1228,9 @@ proc genExpr*(cg: var CodeGen, n: Node): (string, string) =
       cg.emit(res & " = call i8* @" & sanitize(n.funcName) & "(" & argList & ")")
       return (res, "i8*")
     elif retTy == dtFloat:
-      cg.emit(res & " = call double @" & sanitize(n.funcName) & "(" & argList & ")")
-      return (res, "double")
+      let lname = n.funcName.toLowerAscii()
+      let funcName = if lname == "seno": "sin" elif lname == "coseno": "cos" else: sanitize(n.funcName)
+      cg.emit(res & " = call double @" & funcName & "(" & argList & ")")
     elif retTy == dtList:
       cg.emit(res & " = call %CList @" & sanitize(n.funcName) & "(" & argList & ")")
       return (res, "%CList")
@@ -1744,6 +1798,55 @@ proc genStmt*(cg: var CodeGen, n: Node) =
         else: "coma_f_delete"
       cg.emit("call void @" & fnCall & "(i8* " & pv & ")")
 
+  of nkVentana:
+    template intArg(idx: int): string =
+      let (vv, tty) = cg.genExpr(n.children[idx])
+      cg.toI32(vv, tty)
+    case n.strVal
+    of "abrir":
+      let (wv, _) = cg.genExpr(n.children[0])
+      let (hv, _) = cg.genExpr(n.children[1])
+      let ti = cg.getStrConst(n.identName)
+      let t = cg.newTemp()
+      cg.emit(t & " = getelementptr inbounds [" & $(n.identName.len+1) & " x i8], [" & $(n.identName.len+1) & " x i8]* " & ti & ", i32 0, i32 0")
+      cg.emit("call void @coma_ventana_abrir(i32 " & cg.toI32(wv, "i32") & ", i32 " & cg.toI32(hv, "i32") & ", i8* " & t & ")")
+    of "limpiar":
+      cg.emit("call void @coma_ventana_limpiar()")
+    of "color":
+      let (rv, rt) = cg.genExpr(n.children[0])
+      let (gv, gt) = cg.genExpr(n.children[1])
+      let (bv, bt) = cg.genExpr(n.children[2])
+      cg.emit("call void @coma_ventana_color(i32 " & cg.toI32(rv, rt) & ", i32 " & cg.toI32(gv, gt) & ", i32 " & cg.toI32(bv, bt) & ")")
+    of "rectangulo":
+      let (xv, xt) = cg.genExpr(n.children[0])
+      let (yv, yt) = cg.genExpr(n.children[1])
+      let (wv2, wt) = cg.genExpr(n.children[2])
+      let (hv2, ht) = cg.genExpr(n.children[3])
+      cg.emit("call void @coma_ventana_rectangulo(i32 " & cg.toI32(xv, xt) & ", i32 " & cg.toI32(yv, yt) & ", i32 " & cg.toI32(wv2, wt) & ", i32 " & cg.toI32(hv2, ht) & ")")
+    of "circulo":
+      let (xv, xt) = cg.genExpr(n.children[0])
+      let (yv, yt) = cg.genExpr(n.children[1])
+      let (rv, rt) = cg.genExpr(n.children[2])
+      cg.emit("call void @coma_ventana_circulo(i32 " & cg.toI32(xv, xt) & ", i32 " & cg.toI32(yv, yt) & ", i32 " & cg.toI32(rv, rt) & ")")
+    of "linea":
+      let (x1, xt1) = cg.genExpr(n.children[0])
+      let (y1, yt1) = cg.genExpr(n.children[1])
+      let (x2, xt2) = cg.genExpr(n.children[2])
+      let (y2, yt2) = cg.genExpr(n.children[3])
+      cg.emit("call void @coma_ventana_linea(i32 " & cg.toI32(x1, xt1) & ", i32 " & cg.toI32(y1, yt1) & ", i32 " & cg.toI32(x2, xt2) & ", i32 " & cg.toI32(y2, yt2) & ")")
+    of "rotulo":
+      let (xv, _) = cg.genExpr(n.children[0])
+      let (yv, _) = cg.genExpr(n.children[1])
+      let ti = cg.getStrConst(n.identName)
+      let t = cg.newTemp()
+      cg.emit(t & " = getelementptr inbounds [" & $(n.identName.len+1) & " x i8], [" & $(n.identName.len+1) & " x i8]* " & ti & ", i32 0, i32 0")
+      cg.emit("call void @coma_ventana_rotulo(i32 " & cg.toI32(xv, "i32") & ", i32 " & cg.toI32(yv, "i32") & ", i8* " & t & ")")
+    of "voltear":
+      cg.emit("call void @coma_ventana_voltear()")
+    of "cerrar":
+      cg.emit("call void @coma_ventana_cerrar()")
+    else:
+      discard
   of nkLeerLinea:
     let g = cg.ensureStrGlobal(n.identName)
     cg.emit("call void @coma_f_read(i8** " & g & ")")

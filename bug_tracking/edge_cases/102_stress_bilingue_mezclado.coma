@@ -1,0 +1,26 @@
+Heroe igual registro Vida 100 y Ataque 25.
+Vida de Heroe es mayor a 1.
+Mostrar Vida de Heroe.
+Boss equal record Health 50 and Attack 10.
+if Health of Boss is less than 1.
+    Mostrar "fin del juego.".
+else.
+    print "game over.".
+end.
+Numero1 igual azar 100.
+Numero2 equal 50.
+Suma igual Numero1 mas Numero2.
+Mostrar Suma.
+Total equal Numero1 plus Numero2.
+Mostrar Total.
+MiLista igual lista "pan" y "queso".
+Agregar "vino" a MiLista.
+por cada E in MiLista.
+    Mostrar E.
+fin.
+por cada Item en MiLista.
+    print Item.
+end.
+Puntero PunteroA a Heroe.
+igual PunteroA 200.
+Mostrar Vida de Heroe.

@@ -1,0 +1,28 @@
+Numero1 igual azar 999999999.
+Numero2 igual azar 999999999.
+Resultado igual Numero1 entre Numero2.
+Mostrar Numero1.
+Mostrar Numero2.
+Mostrar Resultado.
+Numero3 igual azar 1000000000.
+Numero4 igual 0.
+Resultado2 igual Numero3 entre Numero4.
+Mostrar Resultado2.
+Decimal1 igual 3,1415926535.
+Decimal2 igual 2,7182818284.
+Resultado3 igual Decimal1 mas Decimal2.
+Mostrar Resultado3.
+Resultado4 igual Decimal1 entre Decimal2.
+Mostrar Resultado4.
+Resultado5 igual 999999999 por 999999999.
+Mostrar Resultado5.
+Resultado6 igual 999999999 mas 999999999.
+Mostrar Resultado6.
+Resultado7 igual 999999999 menos 999999999.
+Mostrar Resultado7.
+Numeros igual lista 999999999 y 888888888 y 777777777 y 666666666 y 555555555.
+I igual 1.
+mientras I es_menor_o_igual longitud de Numeros.
+    Mostrar elemento I de Numeros.
+    I igual I mas 1.
+fin.

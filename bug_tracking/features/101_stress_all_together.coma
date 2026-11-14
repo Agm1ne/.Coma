@@ -1,0 +1,54 @@
+function CalculateDamage Health and Attack.
+    Damage equal Attack divided_by 2.
+    return Damage.
+end.
+function SumList L as list.
+    Sum equal 0.
+    I equal 1.
+    while I is_less_or_equal length of L.
+        Sum equal Sum plus element I of L.
+        I equal I plus 1.
+    end.
+    return Sum.
+end.
+Numbers equal list 10 and 20 and 30 and 40 and 50.
+Result equal SumList Numbers.
+print Result.
+Heroe equal record Health 100 and Attack 30.
+print Health of Heroe.
+print Attack of Heroe.
+Health of Heroe equal 80.
+print Health of Heroe.
+Total equal 0.
+I equal 1.
+while I is_less_or_equal 100.
+    NumeroAleatorio equal azar 1000000.
+    Total equal Total plus NumeroAleatorio.
+    I equal I plus 1.
+end.
+print "total:".
+print Total.
+A equal 5 bit_and 3.
+B equal 5 bit_or 3.
+C equal 5 xor 3.
+D equal 1 shift_left 4.
+print A.
+print B.
+print C.
+print D.
+print Time.
+print Date.
+print System.
+print User.
+RandomValue equal azar 1000.
+print RandomValue.
+wait 0.5.
+print "done.".
+create "stress.txt".
+write "stress test.".
+write Total.
+close.
+open "stress.txt".
+read Line.
+print Line.
+close.

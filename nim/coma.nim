@@ -302,6 +302,9 @@ proc compileFile(srcPath: string, emitIR: bool, optLevel: int, outBin: string,
   let rtFile = if wantWin: rtDir / "rt_win.c" else: rtDir / "rt_unix.c"
   let rtFs = rtDir / "rt_fs.c"
   let rtNet = rtDir / "rt_net.c"
+  let rtVentana = rtDir / "rt_ventana.c"
+  let rtGpu = rtDir / "rt_gpu.c"
+  let rtD3d = rtDir / "rt_d3d.c"
   if not fileExists(rtFile):
     echo "Error: falta el runtime '", rtFile, "'"
     return 1
@@ -311,9 +314,25 @@ proc compileFile(srcPath: string, emitIR: bool, optLevel: int, outBin: string,
   if not fileExists(rtNet):
     echo "Error: falta el runtime '", rtNet, "'"
     return 1
+  if not fileExists(rtVentana):
+    echo "Error: falta el runtime '", rtVentana, "'"
+    return 1
+  if not fileExists(rtGpu):
+    echo "Error: falta el runtime '", rtGpu, "'"
+    return 1
+  if not fileExists(rtD3d):
+    echo "Error: falta el runtime '", rtD3d, "'"
+    return 1
   let tgtFlag = if target.len > 0: " -target " & target else: ""
-  let libFlag = if wantWin: " -lws2_32" else: ""
-  let zigCmd = "zig cc" & tgtFlag & " -O" & $optLevel & " \"" & llPath & "\" \"" & rtFile & "\" \"" & rtFs & "\" \"" & rtNet & "\"" & libFlag & " -o \"" & exePath & "\""
+  let libFlag = if wantWin: " -lws2_32 -lgdi32 -lcrypt32 -lsecur32" else: " /usr/lib/x86_64-linux-gnu/libX11.so.6 /usr/lib/x86_64-linux-gnu/libvulkan.so.1"
+  # rt_ventana.c + rt_d3d.c + rt_font8x8.c + rt_bmp.c en ambas plataformas
+  # rt_gpu.c en Linux, rt_gpu_stub.c en Windows (Vulkan sin headers en Win)
+  let rtFs2 = rtDir / "rt_font8x8.c"
+  let rtBmp = rtDir / "rt_bmp.c"
+  let rtHttps = rtDir / "rt_https.c"
+  let rtGpuFile = if wantWin: rtDir / "rt_gpu_stub.c" else: rtGpu
+  let extraRt = " \"" & rtVentana & "\" \"" & rtGpuFile & "\" \"" & rtD3d & "\" \"" & rtFs2 & "\" \"" & rtBmp & "\" \"" & rtHttps & "\""
+  let zigCmd = "zig cc" & tgtFlag & " -O" & $optLevel & " \"" & llPath & "\" \"" & rtFile & "\" \"" & rtFs & "\" \"" & rtNet & "\"" & extraRt & libFlag & " -o \"" & exePath & "\""
   echo "Compilando nativo: ", zigCmd
   let res = execShellCmd(zigCmd)
   if res == 0:

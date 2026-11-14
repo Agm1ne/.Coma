@@ -1,0 +1,4 @@
+ventana open V.
+ventana sprite V "nonexistent.png".
+ventana close V.
+

@@ -1,0 +1,7 @@
+function Padre L.
+  function Hija.
+    devolver Elemento 1 de L.
+  fin.
+  devolver Hija.
+fin.
+show Padre lista 1 y 2 y 3.

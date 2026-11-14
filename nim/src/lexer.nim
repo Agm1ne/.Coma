@@ -294,7 +294,6 @@ const
     ("elemento", "elemento"), ("primero", "primero"), ("ultimo", "ultimo"), ("longitud", "longitud"),
     ("lista", "lista"), ("registro", "registro"), ("puntero", "puntero"), ("esperar", "esperar"),
     ("azar", "azar"), ("limpiar", "limpiar"), ("lienzo", "lienzo"), ("marca", "marca"),
-    ("tablero", "tablero"), ("muro", "muro"), ("moneda", "moneda"), ("meta", "meta"),
     ("poner", "poner"), ("mostrar", "mostrar"), ("pedir", "pedir"), ("fin", "fin"),
     ("mientras", "mientras"), ("funcion", "funcion"), ("devolver", "devolver"),
     ("agregar", "agregar"), ("quitar", "quitar"),
@@ -480,7 +479,8 @@ const
     ("desplaza_derecha", "desplaza_derecha"), ("shift_right", "desplaza_derecha"), ("shr", "desplaza_derecha"),
     ("comprobar", "comprobar"), ("prueba", "comprobar"), ("test", "comprobar"),
     ("verifica", "comprobar"), ("comprueba", "comprobar"), ("asegurate", "comprobar"),
-    ("check", "comprobar"), ("verify", "comprobar"), ("assert", "comprobar"), ("ensure", "comprobar")
+    ("check", "comprobar"), ("verify", "comprobar"), ("assert", "comprobar"), ("ensure", "comprobar"),
+    ("ocultar", "ocultar"), ("hide", "ocultar"), ("esconder", "ocultar"), ("sin_consola", "ocultar"), ("no_console", "ocultar")
   ]
 
 var AliasTable: Table[string, string]
@@ -713,7 +713,6 @@ proc rawTokenize*(lex: var Lexer): seq[Token] =
       if runes.len > 0 and runes[0].isUpper():
         if low in ["elemento", "primero", "ultimo", "longitud", "lista", "registro",
                    "agregar", "quitar", "poner", "puntero", "esperar", "azar",
-                   "limpiar", "lienzo", "marca", "tablero", "muro", "moneda", "meta",
                    "tecla", "key", "tiempo", "time", "delta", "lee", "peek", "pisa",
                    "mostrar", "print", "pedir", "input", "funcion", "function",
                    "devolver", "return", "mientras", "while",
@@ -726,7 +725,19 @@ proc rawTokenize*(lex: var Lexer): seq[Token] =
                     "desconectar", "disconnect",
                    "eliminar", "suprimir", "escribir",
                    "hora", "fecha", "usuario", "sistema", "version",
-                   "directorio"]:
+                   "directorio",
+                   "igual", "mas", "menos", "por", "entre",
+                   "es_igual_a", "es_mayor_que", "es_menor_que",
+                   "es_distinto_de", "es_mayor_o_igual", "es_menor_o_igual",
+                   "mostrar", "pedir", "abrir", "crear", "eliminar", "cerrar",
+                   "lee", "escribir", "conectar", "enviar", "recibir", "desconectar",
+                   "pisa", "en_caso_de_que", "sino", "caso", "otro",
+                   "mientras", "tick", "segun", "por_cada", "para", "sigue", "fin",
+                   "comprobar", "devolver", "esperar", "limpiar",
+                   "ventana", "lienzo", "tablero", "marca", "muro", "moneda", "meta", "ocultar",
+                   "poner", "agregar", "quitar", "funcion", "traer", "registro",
+                   "puntero", "gpu", "elemento", "primero", "ultimo", "longitud",
+                   "vacia", "verdad", "falso", "nula", "de", "a", "en"]:
           tokens.add(Token(kind: tokKeyword, val: canonizeWord(w), line: line, col: col))
         else:
           tokens.add(Token(kind: tokIdent, val: w, line: line, col: col))

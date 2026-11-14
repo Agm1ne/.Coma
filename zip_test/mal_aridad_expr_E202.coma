@@ -1,0 +1,6 @@
+function Suma A as texto as int.
+    return 0.
+end.
+show Suma.
+
+

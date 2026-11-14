@@ -556,14 +556,412 @@ void coma_https_post(const char* url, const char* body, const char* contentType,
     h106("enviar", "demasiados saltos");
 }
 
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <openssl/x509_vfy.h>
+
+#define HTTPS_MAX (4 << 20)
+#define HTTPS_IO (16 * 1024)
+
+static int ssl_init_done = 0;
+static SSL_CTX *g_ssl_ctx = NULL;
+
+static void ssl_init_once(void) {
+    if (ssl_init_done) return;
+    SSL_library_init();
+    SSL_load_error_strings();
+    OpenSSL_add_all_algorithms();
+    g_ssl_ctx = SSL_CTX_new(TLS_client_method());
+    if (!g_ssl_ctx) {
+        fprintf(stderr, "E106 https: no se pudo crear contexto SSL\n");
+        exit(1);
+    }
+    /* Verificar certificado: nunca saltarse pasos */
+    SSL_CTX_set_verify(g_ssl_ctx, SSL_VERIFY_PEER, NULL);
+    /* Cargar CA por defecto del sistema */
+    SSL_CTX_set_default_verify_paths(g_ssl_ctx);
+    ssl_init_done = 1;
+}
+
+static void h106(const char* op, const char* det) {
+    printf("E106 https %s: no se puede (%s)", op, det ? det : "?");
+    coma_einfo();
+    printf("\n");
+    exit(1);
+}
+
+static int conecta_unix(const char* host, int port) {
+    struct addrinfo hints, *res = NULL, *rp;
+    char ps[16];
+    int s = -1;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    snprintf(ps, sizeof(ps), "%d", port);
+    if (getaddrinfo(host, ps, &hints, &res) != 0 || !res)
+        h106("resolver", host);
+    for (rp = res; rp; rp = rp->ai_next) {
+        s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if (s < 0) continue;
+        {
+            struct timeval to;
+            to.tv_sec = 15;
+            to.tv_usec = 0;
+            setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char*)&to, sizeof(to));
+            setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (const char*)&to, sizeof(to));
+        }
+        if (connect(s, rp->ai_addr, (int)rp->ai_addrlen) == 0) break;
+        close(s);
+        s = -1;
+    }
+    freeaddrinfo(res);
+    if (s < 0) h106("conectar", host);
+    return s;
+}
+
+// Parte https://host[:puerto]/ruta. Devuelve 1 si vale.
+static int parte_url_unix(const char* url, char* host, int hn, int* port,
+                          char* path, int pn) {
+    const char* p = url;
+    if (!p || strncmp(p, "https://", 8) != 0) return 0;
+    p += 8;
+    int hi = 0;
+    while (*p && *p != '/' && *p != ':' && hi + 1 < hn) host[hi++] = *p++;
+    host[hi] = 0;
+    if (hi == 0) return 0;
+    *port = 443;
+    if (*p == ':') {
+        p++;
+        int v = 0, nd = 0;
+        while (*p >= '0' && *p <= '9') { v = v * 10 + (*p - '0'); p++; nd++; }
+        if (nd == 0 || v <= 0 || v > 65535) return 0;
+        *port = v;
+    }
+    if (*p == 0) { path[0] = '/'; path[1] = 0; return 1; }
+    if (*p != '/') return 0;
+    {
+        int pi = 0;
+        while (*p && pi + 1 < pn) path[pi++] = *p++;
+        path[pi] = 0;
+        return *p == 0;
+    }
+}
+
+static void send_all_unix(int s, const char* b, int n) {
+    int off = 0;
+    while (off < n) {
+        ssize_t r = send(s, b + off, n - off, 0);
+        if (r <= 0) h106("enviar", "corte al escribir");
+        off += (int)r;
+    }
+}
+
+static void verificar_certificado(SSL* ssl, const char* host) {
+    X509* remoto = SSL_get_peer_certificate(ssl);
+    if (!remoto) h106("tls", "sin certificado");
+    long verificacion = SSL_get_verify_result(ssl);
+    if (verificacion != X509_V_OK) {
+        char det[128];
+        snprintf(det, sizeof(det), "certificado no valido (error %ld)", verificacion);
+        X509_free(remoto);
+        h106("tls", det);
+    }
+    /* Verificar que el nombre del host coincide con el certificado */
+    int ok = 0;
+    char* nombres = NULL;
+    int nalt = X509_get_ext_d2i(remoto, NID_subject_alt_name, NULL, NULL);
+    if (nalt > 0) {
+        GENERAL_NAMES* gens = (GENERAL_NAMES*)nalt;
+        for (int i = 0; i < sk_GENERAL_NAME_num(gens); i++) {
+            GENERAL_NAME* gen = sk_GENERAL_NAME_value(gens, i);
+            if (gen->type == GEN_DNS) {
+                ASN1_STRING* dns = gen->d.dNSName;
+                const char* dns_str = (const char*)ASN1_STRING_get0_data(dns);
+                if (dns_str && strcasecmp(dns_str, host) == 0) { ok = 1; break; }
+                /* Comodín *.ejemplo.com */
+                if (dns_str && dns_str[0] == '*' && dns_str[1] == '.') {
+                    const char* suf = dns_str + 2;
+                    size_t suflen = strlen(suf);
+                    size_t hostlen = strlen(host);
+                    if (hostlen > suflen &&
+                        strcasecmp(host + hostlen - suflen, suf) == 0 &&
+                        host[hostlen - suflen - 1] == '.') { ok = 1; break; }
+                }
+            }
+        }
+        sk_GENERAL_NAME_free(gens);
+    }
+    if (!ok && nalt <= 0) {
+        /* Fallback: CN del subject */
+        X509_NAME* subj = X509_get_subject_name(remoto);
+        int idx = X509_NAME_get_index_by_NID(subj, NID_commonName, -1);
+        if (idx >= 0) {
+            X509_NAME_ENTRY* ent = X509_NAME_get_entry(subj, idx);
+            ASN1_STRING* cn = X509_NAME_ENTRY_get_data(ent);
+            const char* cn_str = (const char*)ASN1_STRING_get0_data(cn);
+            if (cn_str && strcasecmp(cn_str, host) == 0) ok = 1;
+        }
+    }
+    X509_free(remoto);
+    if (!ok) h106("tls", "nombre de host no coincide con certificado");
+}
+
+static char* lee_todo_ssl(SSL* ssl, int sock, size_t* fuera_n) {
+    size_t cap = 65536, len = 0;
+    char* out = (char*)malloc(cap);
+    if (!out) exit(1);
+    for (;;) {
+        char io[HTTPS_IO];
+        int r = SSL_read(ssl, io, (int)sizeof(io));
+        if (r <= 0) {
+            int err = SSL_get_error(ssl, r);
+            if (err == SSL_ERROR_ZERO_RETURN) break; /* cierre limpio */
+            if (err == SSL_ERROR_SYSCALL && r == 0) break;
+            h106("recibir", "corte al leer");
+        }
+        if (len + (size_t)r + 1 > cap) {
+            while (len + (size_t)r + 1 > cap) cap *= 2;
+            char* np = (char*)realloc(out, cap);
+            if (!np) { free(out); exit(1); }
+            out = np;
+        }
+        memcpy(out + len, io, (size_t)r);
+        len += (size_t)r;
+    }
+    out[len] = 0;
+    *fuera_n = len;
+    return out;
+}
+
+static int estado_http(const char* r) {
+    if (!r || strncmp(r, "HTTP/", 5) != 0) return -1;
+    const char* sp = strchr(r, ' ');
+    if (!sp) return -1;
+    return atoi(sp + 1);
+}
+
+static void cabecera(const char* r, const char* nombre, char* fuera, int fn) {
+    size_t nl = strlen(nombre);
+    const char* p = r;
+    fuera[0] = 0;
+    while (*p) {
+        const char* fin = strstr(p, "\r\n");
+        size_t ll = fin ? (size_t)(fin - p) : strlen(p);
+        if (ll > nl + 1 && strncasecmp(p, nombre, nl) == 0 && p[nl] == ':') {
+            const char* v = p + nl + 1;
+            while (*v == ' ' || *v == '\t') v++;
+            size_t n = fin ? (size_t)(fin - v) : strlen(v);
+            if (n >= (size_t)fn) n = (size_t)fn - 1;
+            memcpy(fuera, v, n);
+            fuera[n] = 0;
+            while (n > 0 && (fuera[n-1] == ' ' || fuera[n-1] == '\t')) fuera[--n] = 0;
+            return;
+        }
+        if (!fin) break;
+        p = fin + 2;
+    }
+}
+
+static void coma_https_get_unix(const char* url, char** salida) {
+    ssl_init_once();
+    char cur[2048], host[256], ruta[2048], loc[2048];
+    int puerto = 443, salto;
+    if (!url || !url[0]) h106("traer", "url vacia");
+    if (strlen(url) >= sizeof(cur)) h106("traer", "url larga");
+    strcpy(cur, url);
+    for (salto = 0; salto < 4; salto++) {
+        int sock = -1;
+        SSL* ssl = NULL;
+        char* crudo = NULL;
+        size_t n = 0;
+        int est;
+        if (!parte_url_unix(cur, host, sizeof(host), &puerto, ruta, sizeof(ruta)))
+            h106("traer", "url mala (https://host/ruta)");
+        sock = conecta_unix(host, puerto);
+        ssl = SSL_new(g_ssl_ctx);
+        if (!ssl) { close(sock); h106("tls", "no se pudo crear SSL"); }
+        SSL_set_fd(ssl, sock);
+        if (SSL_connect(ssl) <= 0) {
+            char det[128];
+            snprintf(det, sizeof(det), "apreton roto (0x%lx)", ERR_get_error());
+            SSL_free(ssl);
+            close(sock);
+            h106("tls", det);
+        }
+        verificar_certificado(ssl, host);
+        /* Enviar GET */
+        {
+            char peticion[2048];
+            int pl = snprintf(peticion, sizeof(peticion),
+                "GET %s HTTP/1.0\r\nHost: %s\r\nConnection: close\r\nUser-Agent: Coma/1.0\r\n\r\n",
+                ruta, host);
+            if (pl <= 0 || pl >= (int)sizeof(peticion)) {
+                SSL_free(ssl); close(sock);
+                h106("enviar", "peticion larga");
+            }
+            send_all_unix(sock, peticion, pl);
+        }
+        /* Leer respuesta cifrada */
+        crudo = lee_todo_ssl(ssl, sock, &n);
+        SSL_shutdown(ssl);
+        SSL_free(ssl);
+        close(sock);
+        if (!crudo) h106("traer", "sin respuesta");
+        est = estado_http(crudo);
+        if (est == 200) {
+            const char* cuerpo = strstr(crudo, "\r\n\r\n");
+            char* p;
+            if (!cuerpo) { free(crudo); h106("traer", "respuesta rota"); }
+            cuerpo += 4;
+            p = (char*)malloc(strlen(cuerpo) + 1);
+            if (!p) { free(crudo); exit(1); }
+            strcpy(p, cuerpo);
+            free(crudo);
+            free(*salida);
+            *salida = p;
+            return;
+        }
+        if ((est == 301 || est == 302 || est == 303 || est == 307 || est == 308) && salto < 3) {
+            cabecera(crudo, "Location", loc, sizeof(loc));
+            free(crudo);
+            if (!loc[0]) h106("traer", "salto sin destino");
+            if (strncmp(loc, "https://", 8) == 0) {
+                if (strlen(loc) >= sizeof(cur)) h106("traer", "salto largo");
+                strcpy(cur, loc);
+            } else if (loc[0] == '/') {
+                char base[512];
+                if (puerto != 443) snprintf(base, sizeof(base), "https://%s:%d", host, puerto);
+                else snprintf(base, sizeof(base), "https://%s", host);
+                if (strlen(base) + strlen(loc) >= sizeof(cur)) h106("traer", "salto largo");
+                strcpy(cur, base);
+                strcat(cur, loc);
+            } else {
+                h106("traer", "salto raro (solo https o /ruta)");
+            }
+            continue;
+        }
+        {
+            char det[64];
+            snprintf(det, sizeof(det), "HTTP %d", est);
+            free(crudo);
+            h106("traer", det);
+        }
+    }
+    h106("traer", "demasiados saltos");
+}
+
+static void coma_https_post_unix(const char* url, const char* body,
+                                 const char* contentType, char** salida) {
+    ssl_init_once();
+    char cur[2048], host[256], ruta[2048], loc[2048];
+    int puerto = 443, salto;
+    if (!url || !url[0]) h106("enviar", "url vacia");
+    if (strlen(url) >= sizeof(cur)) h106("enviar", "url larga");
+    strcpy(cur, url);
+    for (salto = 0; salto < 4; salto++) {
+        int sock = -1;
+        SSL* ssl = NULL;
+        char* crudo = NULL;
+        size_t n = 0;
+        int est;
+        if (!parte_url_unix(cur, host, sizeof(host), &puerto, ruta, sizeof(ruta)))
+            h106("enviar", "url mala (https://host/ruta)");
+        sock = conecta_unix(host, puerto);
+        ssl = SSL_new(g_ssl_ctx);
+        if (!ssl) { close(sock); h106("tls", "no se pudo crear SSL"); }
+        SSL_set_fd(ssl, sock);
+        if (SSL_connect(ssl) <= 0) {
+            char det[128];
+            snprintf(det, sizeof(det), "apreton roto (0x%lx)", ERR_get_error());
+            SSL_free(ssl);
+            close(sock);
+            h106("tls", det);
+        }
+        verificar_certificado(ssl, host);
+        /* Enviar POST */
+        {
+            char peticion[4096];
+            int pl = snprintf(peticion, sizeof(peticion),
+                "POST %s HTTP/1.0\r\nHost: %s\r\nConnection: close\r\n"
+                "User-Agent: Coma/1.0\r\nContent-Type: %s\r\nContent-Length: %zu\r\n\r\n%s",
+                ruta, host, contentType ? contentType : "application/json",
+                body ? strlen(body) : 0, body ? body : "");
+            if (pl <= 0 || pl >= (int)sizeof(peticion)) {
+                SSL_free(ssl); close(sock);
+                h106("enviar", "peticion larga");
+            }
+            send_all_unix(sock, peticion, pl);
+        }
+        crudo = lee_todo_ssl(ssl, sock, &n);
+        SSL_shutdown(ssl);
+        SSL_free(ssl);
+        close(sock);
+        if (!crudo) h106("enviar", "sin respuesta");
+        est = estado_http(crudo);
+        if (est == 200) {
+            const char* cuerpo = strstr(crudo, "\r\n\r\n");
+            char* p;
+            if (!cuerpo) { free(crudo); h106("enviar", "respuesta rota"); }
+            cuerpo += 4;
+            p = (char*)malloc(strlen(cuerpo) + 1);
+            if (!p) { free(crudo); exit(1); }
+            strcpy(p, cuerpo);
+            free(crudo);
+            free(*salida);
+            *salida = p;
+            return;
+        }
+        if ((est == 301 || est == 302 || est == 303 || est == 307 || est == 308) && salto < 3) {
+            cabecera(crudo, "Location", loc, sizeof(loc));
+            free(crudo);
+            if (!loc[0]) h106("enviar", "salto sin destino");
+            if (strncmp(loc, "https://", 8) == 0) {
+                if (strlen(loc) >= sizeof(cur)) h106("enviar", "salto largo");
+                strcpy(cur, loc);
+            } else if (loc[0] == '/') {
+                char base[512];
+                if (puerto != 443) snprintf(base, sizeof(base), "https://%s:%d", host, puerto);
+                else snprintf(base, sizeof(base), "https://%s", host);
+                if (strlen(base) + strlen(loc) >= sizeof(cur)) h106("enviar", "salto largo");
+                strcpy(cur, base);
+                strcat(cur, loc);
+            } else {
+                h106("enviar", "salto raro (solo https o /ruta)");
+            }
+            continue;
+        }
+        {
+            char det[64];
+            snprintf(det, sizeof(det), "HTTP %d", est);
+            free(crudo);
+            h106("enviar", det);
+        }
+    }
+    h106("enviar", "demasiados saltos");
+}
+
+void coma_https_get(const char* url, char** salida) {
+    coma_https_get_unix(url, salida);
+}
+void coma_https_post(const char* url, const char* body, const char* contentType, char** salida) {
+    coma_https_post_unix(url, body, contentType, salida);
+}
 #else
-// Sin Windows no hay Schannel: error honesto, nunca silencio.
+// Sin Windows ni Unix/OpenSSL: error honesto, nunca silencio.
 #include <stdio.h>
 #include <stdlib.h>
 void coma_https_get(const char* url, char** salida) {
     (void)url;
     (void)salida;
-    printf("E106 https traer: el https solo esta en Windows (Schannel)");
+    printf("E106 https traer: el https solo esta en Windows (Schannel) y Linux/macOS (OpenSSL)");
     coma_einfo();
     printf("\n");
     exit(1);
@@ -573,7 +971,7 @@ void coma_https_post(const char* url, const char* body, const char* contentType,
     (void)body;
     (void)contentType;
     (void)salida;
-    printf("E106 https enviar: el https solo esta en Windows (Schannel)");
+    printf("E106 https enviar: el https solo esta en Windows (Schannel) y Linux/macOS (OpenSSL)");
     coma_einfo();
     printf("\n");
     exit(1);

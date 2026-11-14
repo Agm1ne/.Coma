@@ -1,0 +1,5 @@
+function Suma show x.
+    return x.
+end.
+show Suma 5.
+

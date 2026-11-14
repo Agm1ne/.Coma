@@ -1,0 +1,7 @@
+/* rt_ventana.c ya tiene ambos backends implementados:
+   - Windows: Win32 + OpenGL
+   - Linux: X11 + Vulkan (gpu) o CPU renderer (fallback)
+   Pero el parser de .Coma no expone comandos ventana/*. Falta agregar:
+     ventana abrir / ventana color / ventana rectangulo / etc.
+   en nim/src/parser.nim y nim/src/codegen.nim
+*/

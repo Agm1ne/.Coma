@@ -94,7 +94,7 @@ proc esIniciadorDeSentencia(val: string): bool =
           "mientras", "tick", "segun", "por_cada", "para", "sigue", "fin", "comprobar",
           "devolver", "esperar", "limpiar", "lienzo", "marca", "muro", "moneda", "meta",
           "tablero", "poner", "agregar", "quitar", "funcion", "traer", "registro",
-          "puntero", "gpu", "sino", "otro", "caso", "verdad", "falso", "vacia"]
+          "puntero", "gpu", "ventana", "sino", "otro", "caso", "verdad", "falso", "vacia"]
 
 # Declaración adelantada de expresiones y sentencias
 proc parseExpression*(p: var Parser): Node
@@ -379,6 +379,12 @@ proc parseStatement*(p: var Parser): Node =
     let varTok = p.advance()
     discard p.expectDot()
     return Node(kind: nkPedir, line: tok.line, col: tok.col, identName: varTok.val)
+
+  # ocultar consola.
+  if tok.kind == tokKeyword and tok.val == "ocultar":
+    discard p.advance()
+    discard p.expectDot()
+    return Node(kind: nkOcultarConsola, line: tok.line, col: tok.col)
 
   # 2b. Ficheros (sesión única): abrir/crear/eliminar "ruta". + cerrar.
   if tok.kind == tokKeyword and tok.val in ["abrir", "crear", "eliminar", "cerrar"]:
@@ -819,7 +825,104 @@ proc parseStatement*(p: var Parser): Node =
     discard p.expectDot()
     return nil
 
-  # 16. Asignaciones (sondeo con rebobinado: si no hay `igual` no se
+  # ventana abrir W y H con "titulo". / ventana limpiar. / ventana color R y G y B.
+  # ventana rectangulo X y Y y W y H. / ventana circulo X y Y y R.
+  # ventana linea X1 y Y1 y X2 y Y2. / ventana rotulo X y Y con "texto".
+  # ventana voltear. / ventana cerrar.
+  if tok.kind == tokKeyword and tok.val == "ventana":
+    discard p.advance()
+    let opTok = p.advance()
+    let op = opTok.val
+    var args: seq[Node] = @[]
+    var title: string = ""
+    case op
+    of "abrir":
+      args.add(p.parseComparison())
+      discard p.matchKeyword("y")
+      args.add(p.parseComparison())
+      discard p.matchKeyword("y")
+      if p.peek().kind == tokStr:
+        title = p.advance().val
+      else:
+        p.issues.add(Issue(line: opTok.line, col: opTok.col, code: "E001", level: eError,
+                         msg: "falta el titulo de la ventana", hint: """usa: ventana abrir W y H con "titulo"."""))
+      discard p.expectDot()
+    of "limpiar":
+      discard p.expectDot()
+    of "color":
+      args.add(p.parseComparison())
+      discard p.matchKeyword("y")
+      args.add(p.parseComparison())
+      discard p.matchKeyword("y")
+      args.add(p.parseComparison())
+      discard p.expectDot()
+    of "rectangulo":
+      args.add(p.parseComparison())
+      discard p.matchKeyword("y")
+      args.add(p.parseComparison())
+      discard p.matchKeyword("y")
+      args.add(p.parseComparison())
+      discard p.matchKeyword("y")
+      args.add(p.parseComparison())
+      discard p.expectDot()
+    of "circulo":
+      args.add(p.parseComparison())
+      discard p.matchKeyword("y")
+      args.add(p.parseComparison())
+      discard p.matchKeyword("y")
+      args.add(p.parseComparison())
+      discard p.expectDot()
+    of "linea":
+      args.add(p.parseComparison())
+      discard p.matchKeyword("y")
+      args.add(p.parseComparison())
+      discard p.matchKeyword("y")
+      args.add(p.parseComparison())
+      discard p.matchKeyword("y")
+      args.add(p.parseComparison())
+      discard p.expectDot()
+    of "rotulo":
+      args.add(p.parseComparison())
+      discard p.matchKeyword("y")
+      args.add(p.parseComparison())
+      discard p.matchKeyword("y")
+      if p.peek().kind == tokStr:
+        title = p.advance().val
+      else:
+        p.issues.add(Issue(line: opTok.line, col: opTok.col, code: "E001", level: eError,
+                         msg: "falta el texto del rotulo", hint: """usa: ventana rotulo X y Y con "texto"."""))
+      discard p.expectDot()
+    of "raton":
+      let sub = p.advance().val
+      if sub == "x":
+        discard p.expectDot()
+        return Node(kind: nkVentana, line: tok.line, col: tok.col, strVal: "ratonx", children: @[], identName: "")
+      elif sub == "y":
+        discard p.expectDot()
+        return Node(kind: nkVentana, line: tok.line, col: tok.col, strVal: "ratony", children: @[], identName: "")
+      else:
+        p.issues.add(Issue(line: opTok.line, col: opTok.col, code: "E001", level: eError, msg: "operacion de raton desconocida", hint: "usar: raton x, raton y"))
+        discard p.expectDot()
+        return nil
+    of "boton":
+      discard p.advance() # izq
+      discard p.expectDot()
+      return Node(kind: nkVentana, line: tok.line, col: tok.col, strVal: "botonizq", children: @[], identName: "")
+    of "tecla":
+      args.add(p.parseComparison())
+      discard p.expectDot()
+      return Node(kind: nkVentana, line: tok.line, col: tok.col, strVal: "tecla", children: args, identName: "")
+    of "voltear":
+      discard p.expectDot()
+    of "cerrar":
+      discard p.expectDot()
+    else:
+      p.issues.add(Issue(line: opTok.line, col: opTok.col, code: "E001", level: eError,
+                       msg: "operacion de ventana desconocida: " & op, hint: "usar: abrir, limpiar, color, rectangulo, circulo, linea, rotulo, voltear, cerrar"))
+      discard p.expectDot()
+      return nil
+    return Node(kind: nkVentana, line: tok.line, col: tok.col, strVal: op, children: args, identName: title)
+
   # consumió nada y cae al fallback de expresión suelta).
   # Elemento 2 de L igual 99.
   if tok.kind == tokKeyword and tok.val in ["elemento", "primero", "ultimo"]:

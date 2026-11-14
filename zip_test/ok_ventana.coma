@@ -1,0 +1,7 @@
+ventana abrir 400 300 "Test".
+ventana limpiar.
+ventana color 255 0 0.
+ventana rectangulo 10 10 50 50.
+ventana rotulo 20 20 "Hola".
+ventana voltear.
+ventana cerrar.

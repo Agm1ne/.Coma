@@ -1,0 +1,19 @@
+Numero igual azar 999999999.
+Cero igual 0.
+Resultado igual Numero entre Cero.
+Mostrar Resultado.
+Numero2 igual azar 500000000.
+Resultado2 igual Cero entre Numero2.
+Mostrar Resultado2.
+Decimal igual 123456789,123456789.
+Resultado3 igual Decimal entre Cero.
+Mostrar Resultado3.
+I igual 1.
+mientras I es_menor_o_igual 100.
+    NumeroAleatorio igual azar 1000000.
+    Divisor igual azar 5.
+    ResultadoDivision igual NumeroAleatorio entre Divisor.
+    Mostrar ResultadoDivision.
+    I igual I mas 1.
+fin.
+Mostrar "prueba de división completa.".

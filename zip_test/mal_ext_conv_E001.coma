@@ -1,0 +1,4 @@
+function external Nombre as int alias "f" usando gcc.
+
+
+

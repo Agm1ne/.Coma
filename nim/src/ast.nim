@@ -108,6 +108,8 @@ type
     nkRed,           # conectar/enviar/recibir/desconectar (sesión única TCP)
     nkComprobar,     # comprobar "desc" ... fin (tests automáticos)
     nkExprStmt,      # Expresión suelta como sentencia
+    nkVentana,       # ventana abrir/limpiar/color/rectangulo/circulo/linea/rotulo/voltear/cerrar
+    nkOcultarConsola, # ocultar consola/cmd (hide console)
 
     # Declaraciones
     nkFuncDecl,      # funcion Nombre A y B ... fin

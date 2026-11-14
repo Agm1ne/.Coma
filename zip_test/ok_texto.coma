@@ -1,0 +1,4 @@
+A igual "Hello".
+B igual "World".
+C igual A y " " y B.
+show C.
